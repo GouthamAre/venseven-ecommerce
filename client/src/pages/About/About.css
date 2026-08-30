@@ -1,0 +1,567 @@
+.about-page {
+  padding-top: 100px;
+  background: #fbfbfb;
+  color: #111111;
+  overflow-x: hidden;
+}
+
+.about-container {
+  width: min(90%, 1400px);
+  margin: 0 auto;
+}
+
+/* =========================
+   HERO SECTION
+========================= */
+
+.about-hero {
+  padding: 80px 0 90px;
+  background: #111111;
+  color: #ffffff;
+  position: relative;
+}
+
+.about-hero-content {
+  max-width: 900px;
+}
+
+.about-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 16px;
+}
+
+.about-hero-title {
+  margin: 0 0 24px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(4.5rem, 9vw, 8rem);
+  line-height: 0.88;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.about-hero-subtitle {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(16px, 1.8vw, 20px);
+  color: #b0b0b0;
+  line-height: 1.65;
+  max-width: 680px;
+}
+
+/* =========================
+   PHILOSOPHY SECTION
+========================= */
+
+.about-story-section {
+  padding: 120px 0;
+  background: #ffffff;
+}
+
+.about-story-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.story-label {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.story-heading {
+  margin: 0 0 24px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.5rem, 6vw, 5.5rem);
+  line-height: 0.92;
+  letter-spacing: 1px;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.story-lead {
+  font-family: "Poppins", sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #222222;
+  margin-bottom: 16px;
+}
+
+.story-body {
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #666666;
+  margin: 0;
+}
+
+.about-portrait-card {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08);
+  aspect-ratio: 0.85;
+}
+
+.about-story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.portrait-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portrait-caption span {
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #25b7ed;
+}
+
+.portrait-caption strong {
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* =========================
+   HYDERABAD STUDIO PRESENCE
+========================= */
+
+.about-store-section {
+  padding: 100px 0;
+  background: #f4f4f4;
+}
+
+.about-store-card {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
+}
+
+.store-image-wrapper {
+  position: relative;
+  min-height: 480px;
+}
+
+.store-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.store-badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.store-badge svg {
+  color: #25b7ed;
+  font-size: 13px;
+}
+
+.store-info-content {
+  padding: 60px 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.store-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.store-title {
+  margin: 0 0 18px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(2.8rem, 4.5vw, 4.2rem);
+  line-height: 0.92;
+  letter-spacing: 1px;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.store-desc {
+  margin: 0 0 28px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555555;
+}
+
+.store-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.store-detail-item strong {
+  display: block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #111111;
+  margin-bottom: 2px;
+}
+
+.store-detail-item p {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #666666;
+}
+
+.store-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 10px;
+  padding: 14px 28px;
+  background: #111111;
+  color: #ffffff;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.store-cta-btn:hover {
+  background: #25b7ed;
+  transform: translateY(-2px);
+}
+
+/* =========================
+   VALUES SECTION
+========================= */
+
+.about-values-section {
+  padding: 120px 0;
+  background: #ffffff;
+}
+
+.values-header {
+  text-align: center;
+  max-width: 650px;
+  margin: 0 auto 60px;
+}
+
+.values-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.values-title {
+  margin: 0 0 14px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.5rem, 6vw, 5rem);
+  line-height: 0.92;
+  letter-spacing: 1px;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.values-subtitle {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  color: #666666;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.value-card {
+  background: #fbfbfb;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 36px 28px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.value-card:hover {
+  border-color: #111111;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+}
+
+.value-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.value-number {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 28px;
+  color: #25b7ed;
+  letter-spacing: 1px;
+}
+
+.value-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  color: #111111;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+}
+
+.value-card-title {
+  margin: 0 0 12px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #111111;
+}
+
+.value-card-desc {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #666666;
+}
+
+/* =========================
+   CLOSING CTA
+========================= */
+
+.about-cta-section {
+  padding: 0 0 120px;
+  background: #ffffff;
+}
+
+.about-cta-box {
+  background: #111111;
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 80px 40px;
+  text-align: center;
+}
+
+.about-cta-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 14px;
+}
+
+.about-cta-heading {
+  margin: 0 0 14px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.5rem, 6.5vw, 5.5rem);
+  line-height: 0.92;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.about-cta-text {
+  margin: 0 auto 36px;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  color: #a0a0a0;
+  max-width: 500px;
+}
+
+.about-cta-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.about-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: #25b7ed;
+  color: #ffffff;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.about-primary-btn:hover {
+  background: #ffffff;
+  color: #111111;
+  transform: translateY(-2px);
+}
+
+.about-secondary-btn {
+  display: inline-flex;
+  padding: 16px 36px;
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid #444444;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.about-secondary-btn:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+========================= */
+
+@media (max-width: 1024px) {
+  .about-story-grid {
+    gap: 40px;
+  }
+
+  .values-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .store-info-content {
+    padding: 40px 30px;
+  }
+}
+
+@media (max-width: 850px) {
+  .about-story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-store-card {
+    grid-template-columns: 1fr;
+  }
+
+  .store-image-wrapper {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 600px) {
+  .about-hero {
+    padding: 60px 0 70px;
+  }
+
+  .about-hero-title {
+    font-size: clamp(3.5rem, 16vw, 4.8rem);
+  }
+
+  .about-story-section,
+  .about-store-section,
+  .about-values-section,
+  .about-cta-section {
+    padding: 70px 0;
+  }
+
+  .values-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-cta-box {
+    padding: 50px 20px;
+  }
+
+  .about-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .about-primary-btn,
+  .about-secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

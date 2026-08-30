@@ -1,0 +1,271 @@
+.newsletter {
+  padding: 130px 0;
+  background: #111111;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.newsletter-container {
+  width: min(90%, 1400px);
+  margin: 0 auto;
+}
+
+.newsletter-content {
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+
+.newsletter-label {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 16px;
+}
+
+.newsletter-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.6rem, 6.5vw, 5.5rem);
+  line-height: 0.9;
+  letter-spacing: 2px;
+  font-weight: 400;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.newsletter-subtitle {
+  margin-top: 14px;
+  margin-bottom: 38px;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.3px;
+}
+
+/* =========================
+   FORM & INPUT GROUP
+========================= */
+
+.newsletter-form {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.newsletter-input-group {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 5px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.newsletter-input-group:focus-within {
+  border-color: #25b7ed;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 0 0 1px #25b7ed, 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.newsletter-input-group.has-error {
+  border-color: #ff5e5e;
+  box-shadow: 0 0 0 1px #ff5e5e;
+}
+
+/* ACCESSIBILITY: Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.newsletter-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 14px 18px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.newsletter-input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+  font-family: "Poppins", sans-serif;
+}
+
+/* =========================
+   SUBMIT BUTTON
+========================= */
+
+.newsletter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  background: #ffffff;
+  color: #111111;
+  border: none;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.newsletter-arrow {
+  font-size: 14px;
+  line-height: 1;
+  transition: transform 0.25s ease;
+}
+
+.newsletter-btn:hover {
+  background: #25b7ed;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(37, 183, 237, 0.35);
+}
+
+.newsletter-btn:hover .newsletter-arrow {
+  transform: translateX(3px);
+}
+
+/* =========================
+   FEEDBACK MESSAGES
+========================= */
+
+.newsletter-error-msg {
+  margin: 10px 0 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #ff6b6b;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.newsletter-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 26px;
+  background: rgba(37, 183, 237, 0.08);
+  border: 1px solid rgba(37, 183, 237, 0.35);
+  border-radius: 8px;
+  text-align: left;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.success-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #25b7ed;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.success-text strong {
+  display: block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.success-text span {
+  display: block;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+}
+
+.newsletter-disclaimer {
+  display: block;
+  margin-top: 28px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+========================= */
+
+@media (max-width: 600px) {
+  .newsletter {
+    padding: 85px 0;
+  }
+
+  .newsletter-title {
+    font-size: clamp(2.8rem, 12vw, 3.8rem);
+  }
+
+  .newsletter-subtitle {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .newsletter-input-group {
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .newsletter-input {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+
+  .newsletter-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+  }
+
+  .newsletter-error-msg {
+    text-align: center;
+    padding-left: 0;
+  }
+
+  .newsletter-success {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+}

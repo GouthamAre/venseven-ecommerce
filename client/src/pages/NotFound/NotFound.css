@@ -1,0 +1,92 @@
+/* =========================================================
+   VENSEVEN NOT FOUND 404 STYLES
+   ========================================================= */
+
+.not-found-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #0a0a0a;
+  color: #ffffff;
+  padding: 120px var(--space-4, 16px) 80px;
+  text-align: center;
+}
+
+.not-found-container {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.not-found-badge {
+  font-family: var(--font-ui, "Montserrat", sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-accent, #25b7ed);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.not-found-title {
+  font-family: var(--font-heading, "Bebas Neue", sans-serif);
+  font-size: 3.5rem;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.not-found-subtitle {
+  font-family: var(--font-body, "Poppins", sans-serif);
+  font-size: 0.9rem;
+  color: #888888;
+  margin-bottom: var(--space-8, 32px);
+  line-height: 1.6;
+}
+
+.not-found-actions {
+  display: flex;
+  gap: var(--space-4, 16px);
+  justify-content: center;
+}
+
+.not-found-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui, "Montserrat", sans-serif);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 13px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all var(--transition-fast, 0.25s ease);
+}
+
+.not-found-btn.primary {
+  background: var(--color-accent, #25b7ed);
+  color: #000000;
+}
+
+.not-found-btn.primary:hover {
+  background: #ffffff;
+}
+
+.not-found-btn.secondary {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.not-found-btn.secondary:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 480px) {
+  .not-found-actions {
+    flex-direction: column;
+  }
+}

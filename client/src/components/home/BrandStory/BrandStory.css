@@ -1,0 +1,284 @@
+.brand-story {
+  padding: 140px 0;
+  background: #fbfbfb;
+  color: #111111;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid #eeeeee;
+}
+
+.brand-story-container {
+  width: min(90%, 1400px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+/* =========================
+   MEDIA / LEFT COLUMN
+========================= */
+
+.brand-story-media {
+  position: relative;
+}
+
+.brand-story-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  aspect-ratio: 1.08;
+  background: #e5e5e5;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.07);
+}
+
+.brand-story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.brand-story-image-wrapper:hover .brand-story-img {
+  transform: scale(1.04);
+}
+
+.brand-story-badge {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  padding: 12px 20px;
+  background: rgba(17, 17, 17, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 2;
+}
+
+.badge-tag {
+  font-family: "Montserrat", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #25b7ed;
+  text-transform: uppercase;
+}
+
+.badge-loc {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+}
+
+/* =========================
+   CONTENT / RIGHT COLUMN
+========================= */
+
+.brand-story-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-story-label {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 18px;
+}
+
+.brand-story-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.8rem, 6vw, 5.8rem);
+  line-height: 0.88;
+  letter-spacing: 1.5px;
+  font-weight: 400;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.brand-story-title span {
+  display: inline-block;
+  color: #25b7ed;
+}
+
+.brand-story-description {
+  margin-top: 24px;
+  margin-bottom: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #555555;
+  letter-spacing: 0.2px;
+}
+
+/* =========================
+   VALUE HIGHLIGHTS
+========================= */
+
+.brand-story-highlights {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid #e8e8e8;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.brand-highlight-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.highlight-number {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #25b7ed;
+}
+
+.brand-highlight-item h4 {
+  margin: 0;
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: 0.5px;
+}
+
+.brand-highlight-item p {
+  margin: 4px 0 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #777777;
+}
+
+/* =========================
+   CTA BUTTON
+========================= */
+
+.brand-story-action {
+  margin-top: 40px;
+}
+
+.brand-story-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 36px;
+  background: #111111;
+  color: #ffffff;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.brand-story-arrow {
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+
+.brand-story-btn:hover {
+  background: #25b7ed;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(37, 183, 237, 0.28);
+}
+
+.brand-story-btn:hover .brand-story-arrow {
+  transform: translateX(4px);
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+========================= */
+
+@media (max-width: 1024px) {
+  .brand-story-container {
+    gap: 45px;
+  }
+
+  .brand-story-title {
+    font-size: clamp(3.2rem, 5.5vw, 4.6rem);
+  }
+}
+
+@media (max-width: 880px) {
+  .brand-story {
+    padding: 100px 0;
+  }
+
+  .brand-story-container {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  .brand-story-image-wrapper {
+    aspect-ratio: 1.4;
+  }
+}
+
+@media (max-width: 600px) {
+  .brand-story {
+    padding: 80px 0;
+  }
+
+  .brand-story-image-wrapper {
+    aspect-ratio: 1.15;
+  }
+
+  .brand-story-badge {
+    bottom: 16px;
+    left: 16px;
+    padding: 10px 14px;
+  }
+
+  .brand-story-title {
+    font-size: clamp(3rem, 13vw, 4.2rem);
+    line-height: 0.9;
+  }
+
+  .brand-story-description {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .brand-story-highlights {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .brand-story-action {
+    margin-top: 30px;
+  }
+
+  .brand-story-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

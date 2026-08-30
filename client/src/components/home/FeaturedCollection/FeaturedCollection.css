@@ -1,0 +1,231 @@
+.featured-collection {
+  position: relative;
+  width: 100%;
+  min-height: 650px;
+  height: clamp(560px, 75vh, 780px);
+  overflow: hidden;
+  background: #0d0d0d;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+}
+
+/* =========================
+   BACKGROUND IMAGE
+========================= */
+
+.featured-collection-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.featured-collection-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+
+.featured-collection:hover .featured-collection-image {
+  transform: scale(1.04);
+}
+
+/* =========================
+   CINEMATIC OVERLAYS
+========================= */
+
+.featured-collection-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    90deg,
+    rgba(10, 10, 10, 0.90) 0%,
+    rgba(10, 10, 10, 0.76) 40%,
+    rgba(10, 10, 10, 0.40) 70%,
+    rgba(10, 10, 10, 0.20) 100%
+  );
+  pointer-events: none;
+}
+
+/* =========================
+   CONTAINER & CONTENT
+========================= */
+
+.featured-collection-container {
+  position: relative;
+  z-index: 2;
+  width: min(90%, 1400px);
+  margin: 0 auto;
+  padding: 80px 0;
+}
+
+.featured-collection-content {
+  max-width: 650px;
+}
+
+/* =========================
+   LABEL / EYEBROW
+========================= */
+
+.featured-collection-label {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 20px;
+}
+
+/* =========================
+   EDITORIAL HEADING
+========================= */
+
+.featured-collection-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(4.5rem, 8.5vw, 8.5rem);
+  line-height: 0.86;
+  letter-spacing: 2px;
+  font-weight: 400;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.featured-collection-title span {
+  display: inline-block;
+  color: #ffffff;
+}
+
+/* =========================
+   DESCRIPTION
+========================= */
+
+.featured-collection-desc {
+  margin-top: 24px;
+  margin-bottom: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.2px;
+}
+
+/* =========================
+   CALL TO ACTION (CTA)
+========================= */
+
+.featured-collection-action {
+  margin-top: 36px;
+}
+
+.featured-collection-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: #ffffff;
+  color: #111111;
+  border-radius: 6px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.featured-collection-arrow {
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.3s ease;
+}
+
+.featured-collection-btn:hover {
+  background: #25b7ed;
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(37, 183, 237, 0.3);
+}
+
+.featured-collection-btn:hover .featured-collection-arrow {
+  transform: translateX(4px);
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+========================= */
+
+@media (max-width: 900px) {
+  .featured-collection {
+    min-height: 520px;
+    height: 65vh;
+  }
+
+  .featured-collection-title {
+    font-size: clamp(4rem, 11vw, 6.5rem);
+  }
+
+  .featured-collection-desc {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 600px) {
+  .featured-collection {
+    min-height: 480px;
+    height: auto;
+    padding: 90px 0;
+  }
+
+  .featured-collection-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(10, 10, 10, 0.6) 0%,
+      rgba(10, 10, 10, 0.85) 60%,
+      rgba(10, 10, 10, 0.95) 100%
+    );
+  }
+
+  .featured-collection-image {
+    object-position: center top;
+  }
+
+  .featured-collection-container {
+    padding: 0;
+  }
+
+  .featured-collection-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    margin-bottom: 14px;
+  }
+
+  .featured-collection-title {
+    font-size: clamp(3.6rem, 16vw, 5.2rem);
+    line-height: 0.88;
+  }
+
+  .featured-collection-desc {
+    margin-top: 18px;
+    font-size: 14px;
+  }
+
+  .featured-collection-action {
+    margin-top: 28px;
+  }
+
+  .featured-collection-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 15px 24px;
+  }
+}

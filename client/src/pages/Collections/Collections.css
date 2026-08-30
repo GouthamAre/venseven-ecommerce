@@ -1,0 +1,265 @@
+.collections-page {
+  padding: 130px 0 120px;
+  background: #0d0d0d;
+  min-height: 100vh;
+  color: #ffffff;
+}
+
+.collections-container {
+  width: min(90%, 1400px);
+  margin: 0 auto;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.collections-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.collections-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.collections-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(4.5rem, 8vw, 7.5rem);
+  line-height: 0.88;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.collections-subtitle {
+  margin: 16px auto 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  color: #a0a0a0;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+/* =========================
+   COLLECTIONS GRID
+========================= */
+
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px;
+}
+
+.collection-card {
+  position: relative;
+  min-height: 540px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 45px 40px;
+  background: #181818;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.collection-image-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.collection-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.collection-card:hover .collection-bg-img {
+  transform: scale(1.05);
+}
+
+.collection-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.95) 0%,
+    rgba(10, 10, 10, 0.65) 45%,
+    rgba(10, 10, 10, 0.2) 100%
+  );
+  transition: background 0.4s ease;
+}
+
+.collection-card:hover .collection-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.98) 0%,
+    rgba(10, 10, 10, 0.72) 50%,
+    rgba(10, 10, 10, 0.3) 100%
+  );
+}
+
+.collection-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+  z-index: 2;
+}
+
+/* =========================
+   CONTENT
+========================= */
+
+.collection-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.collection-tagline {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 8px;
+}
+
+.collection-heading {
+  margin: 0 0 12px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.2rem, 5vw, 4.8rem);
+  line-height: 0.92;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.collection-desc {
+  margin: 0 0 24px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cccccc;
+  max-width: 440px;
+}
+
+.collection-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: #ffffff;
+  color: #111111;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.collection-cta-btn svg {
+  transition: transform 0.25s ease;
+}
+
+.collection-cta-btn:hover {
+  background: #25b7ed;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(37, 183, 237, 0.35);
+}
+
+.collection-cta-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+========================= */
+
+@media (max-width: 1024px) {
+  .collections-grid {
+    gap: 24px;
+  }
+
+  .collection-card {
+    min-height: 480px;
+    padding: 35px 30px;
+  }
+}
+
+@media (max-width: 800px) {
+  .collections-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .collection-card {
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 600px) {
+  .collections-page {
+    padding: 105px 0 80px;
+  }
+
+  .collections-header {
+    margin-bottom: 40px;
+  }
+
+  .collections-title {
+    font-size: clamp(3.5rem, 16vw, 5rem);
+  }
+
+  .collection-card {
+    min-height: 390px;
+    padding: 28px 22px;
+  }
+
+  .collection-heading {
+    font-size: 3.2rem;
+  }
+
+  .collection-desc {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .collection-cta-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

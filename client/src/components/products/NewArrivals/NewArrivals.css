@@ -1,0 +1,138 @@
+.new-arrivals {
+  padding: 120px 0;
+  background: #f5f5f5;
+  color: #111111;
+}
+
+.new-arrivals-container {
+  width: min(90%, 1400px);
+  margin: 0 auto;
+}
+
+.new-arrivals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 60px;
+}
+
+.section-label {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.new-arrivals-header h2 {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(4rem, 7vw, 6.5rem);
+  line-height: 0.88;
+  letter-spacing: 1px;
+  font-weight: 400;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.new-arrivals-header h2 span {
+  display: inline-block;
+  color: #25b7ed;
+}
+
+.new-arrivals-header p {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  color: #666666;
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: right;
+  max-width: 320px;
+}
+
+.new-arrivals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.new-arrivals-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 55px;
+}
+
+.new-arrivals-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 36px;
+  border: 1.5px solid #111111;
+  border-radius: 4px;
+  background: transparent;
+  color: #111111;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+}
+
+.new-arrivals-cta:hover {
+  background: #111111;
+  color: white;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 1024px) {
+  .new-arrivals-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+
+  .new-arrivals-header {
+    margin-bottom: 45px;
+  }
+}
+
+@media (max-width: 768px) {
+  .new-arrivals {
+    padding: 90px 0;
+  }
+
+  .new-arrivals-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 35px;
+  }
+
+  .new-arrivals-header p {
+    text-align: left;
+    max-width: 100%;
+  }
+
+  .new-arrivals-header h2 {
+    font-size: clamp(3.2rem, 14vw, 4.8rem);
+  }
+}
+
+@media (max-width: 550px) {
+  .new-arrivals {
+    padding: 70px 0;
+  }
+
+  .new-arrivals-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .new-arrivals-cta {
+    width: 100%;
+  }
+}

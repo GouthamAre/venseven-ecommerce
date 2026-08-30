@@ -1,0 +1,770 @@
+.product-page {
+  padding: 130px 0 120px;
+  background: #fbfbfb;
+  min-height: 100vh;
+  color: #111111;
+}
+
+.product-container {
+  width: min(90%, 1400px);
+  margin: 0 auto;
+}
+
+/* =========================
+   BREADCRUMB
+========================= */
+
+.product-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 35px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #777777;
+  flex-wrap: wrap;
+}
+
+.product-breadcrumb a {
+  color: #777777;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.product-breadcrumb a:hover {
+  color: #25b7ed;
+}
+
+.breadcrumb-separator {
+  color: #cccccc;
+  font-size: 10px;
+}
+
+.breadcrumb-current {
+  color: #111111;
+  font-weight: 700;
+}
+
+/* =========================
+   SHOWCASE (2 COLUMNS)
+========================= */
+
+.product-showcase {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 70px;
+  align-items: flex-start;
+  margin-bottom: 80px;
+}
+
+/* =========================
+   GALLERY (LEFT)
+========================= */
+
+.product-gallery {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gallery-main-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  aspect-ratio: 0.82;
+  background: #eeeeee;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
+}
+
+.gallery-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.gallery-main-image-wrapper:hover .gallery-main-img {
+  transform: scale(1.03);
+}
+
+.product-badge-pill {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  padding: 6px 14px;
+  background: #111111;
+  color: #ffffff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.gallery-thumbnails {
+  display: flex;
+  gap: 12px;
+}
+
+.gallery-thumb-btn {
+  width: 75px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  background: #eeeeee;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.25s ease, opacity 0.25s ease;
+  opacity: 0.65;
+}
+
+.gallery-thumb-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-thumb-btn:hover {
+  opacity: 0.9;
+}
+
+.gallery-thumb-btn.active {
+  border-color: #25b7ed;
+  opacity: 1;
+  box-shadow: 0 0 0 1px #25b7ed;
+}
+
+/* =========================
+   DETAILS CONTENT (RIGHT)
+========================= */
+
+.product-details-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-category-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.product-page-title {
+  margin: 0 0 16px;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.2rem, 5.5vw, 4.8rem);
+  line-height: 0.92;
+  letter-spacing: 1.5px;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.product-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: 24px;
+}
+
+.product-current-price {
+  font-family: "Montserrat", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: 0.5px;
+}
+
+.product-tax-note {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  color: #888888;
+}
+
+.product-attribute-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.attribute-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #111111;
+}
+
+.attribute-value {
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  color: #444444;
+}
+
+/* =========================
+   SIZE SELECTOR
+========================= */
+
+.product-size-section {
+  margin-bottom: 30px;
+}
+
+.size-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.size-guide-btn {
+  background: transparent;
+  border: none;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #777777;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.size-guide-btn:hover {
+  color: #25b7ed;
+}
+
+.size-options-grid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.size-btn {
+  min-width: 48px;
+  height: 48px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1.5px solid #dcdcdc;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111111;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.size-btn:hover:not(.disabled) {
+  border-color: #111111;
+}
+
+.size-btn.selected {
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
+}
+
+.size-btn.disabled,
+.size-btn.sold-out-size {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  background: #f5f5f5;
+  border-color: #e5e5e5;
+  color: #888888;
+  pointer-events: none;
+}
+
+.size-stock-feedback-wrapper {
+  margin-top: 10px;
+  min-height: 20px;
+}
+
+.size-stock-hint {
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-block;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.size-stock-hint.low-stock {
+  color: #d97706; /* Warm amber indicator */
+}
+
+.size-stock-hint.out-of-stock {
+  color: #ef4444; /* Clean subtle red */
+}
+
+.add-to-cart-btn.sold-out-btn {
+  background: #262626 !important;
+  color: #737373 !important;
+  border-color: #333333 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+/* =========================
+   PURCHASE ROW (QTY + ADD TO CART + WISHLIST)
+========================= */
+
+.product-purchase-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.quantity-wrapper {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #dcdcdc;
+  border-radius: 4px;
+  height: 52px;
+}
+
+.qty-btn {
+  width: 42px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.qty-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.qty-number {
+  min-width: 32px;
+  text-align: center;
+  font-family: "Montserrat", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.add-to-cart-btn {
+  flex: 1;
+  min-width: 180px;
+  height: 52px;
+  padding: 0 24px;
+  background: #111111;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.add-to-cart-btn:hover {
+  background: #25b7ed;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(37, 183, 237, 0.3);
+}
+
+.add-to-cart-btn.success {
+  background: #10b981;
+}
+
+.wishlist-toggle-btn {
+  width: 52px;
+  height: 52px;
+  background: #ffffff;
+  border: 1.5px solid #dcdcdc;
+  border-radius: 4px;
+  color: #111111;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.wishlist-toggle-btn:hover {
+  border-color: #25b7ed;
+  color: #25b7ed;
+}
+
+.wishlist-toggle-btn.active {
+  background: #ffebee;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.filled-heart {
+  fill: #ef4444;
+}
+
+/* =========================
+   FEEDBACK BANNER
+========================= */
+
+.cart-feedback-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(37, 183, 237, 0.08);
+  border: 1px solid rgba(37, 183, 237, 0.35);
+  border-radius: 6px;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #111111;
+  margin-bottom: 28px;
+}
+
+.feedback-check-icon {
+  color: #25b7ed;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* =========================
+   TRUST SIGNALS
+========================= */
+
+.product-trust-signals {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.trust-signal-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.trust-signal-item svg {
+  font-size: 20px;
+  color: #25b7ed;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trust-signal-item strong {
+  display: block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: 0.5px;
+}
+
+.trust-signal-item p {
+  margin: 2px 0 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  color: #777777;
+  line-height: 1.45;
+}
+
+/* =========================
+   ACCORDIONS SECTION
+========================= */
+
+.product-accordion-section {
+  max-width: 900px;
+  margin: 0 auto 90px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.accordion-item {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 0;
+  background: transparent;
+  border: none;
+  font-family: "Montserrat", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #111111;
+  cursor: pointer;
+  text-align: left;
+}
+
+.accordion-chevron {
+  font-size: 18px;
+  color: #777777;
+  transition: transform 0.3s ease;
+}
+
+.accordion-trigger.open .accordion-chevron {
+  transform: rotate(180deg);
+  color: #25b7ed;
+}
+
+.accordion-content {
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+
+.accordion-text {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #555555;
+}
+
+.details-bullet-list {
+  list-style: disc;
+  padding-left: 20px;
+  margin: 0 0 20px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555555;
+}
+
+.fabric-care-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #eeeeee;
+}
+
+.fabric-care-grid strong {
+  display: block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #111111;
+  margin-bottom: 4px;
+}
+
+.fabric-care-grid p {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  color: #666666;
+}
+
+/* =========================
+   RELATED PRODUCTS
+========================= */
+
+.product-related-section {
+  padding-top: 40px;
+  border-top: 1px solid #e8e8e8;
+}
+
+.related-section-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.related-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #25b7ed;
+  margin-bottom: 10px;
+}
+
+.related-title {
+  margin: 0;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.5rem, 6.5vw, 5.5rem);
+  line-height: 0.9;
+  letter-spacing: 1px;
+  color: #111111;
+  text-transform: uppercase;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+/* =========================
+   404 NOT FOUND
+========================= */
+
+.product-not-found {
+  padding: 180px 20px 140px;
+  min-height: 80vh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.not-found-content {
+  max-width: 500px;
+}
+
+.not-found-eyebrow {
+  display: inline-block;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #25b7ed;
+  margin-bottom: 12px;
+}
+
+.not-found-content h1 {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  line-height: 0.9;
+  margin: 0 0 16px;
+}
+
+.not-found-content p {
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  color: #666666;
+  margin-bottom: 30px;
+}
+
+.not-found-btn {
+  display: inline-flex;
+  padding: 16px 36px;
+  background: #111111;
+  color: #ffffff;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: background 0.3s ease;
+}
+
+.not-found-btn:hover {
+  background: #25b7ed;
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINTS
+========================= */
+
+@media (max-width: 1024px) {
+  .product-showcase {
+    gap: 40px;
+  }
+
+  .related-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 850px) {
+  .product-showcase {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  .gallery-main-image-wrapper {
+    aspect-ratio: 0.92;
+  }
+}
+
+@media (max-width: 600px) {
+  .product-page {
+    padding: 105px 0 80px;
+  }
+
+  .product-page-title {
+    font-size: clamp(2.8rem, 12vw, 3.8rem);
+  }
+
+  .product-purchase-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .quantity-wrapper {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .qty-btn {
+    flex: 1;
+  }
+
+  .add-to-cart-btn {
+    flex: 1;
+    min-width: 0;
+    height: 52px;
+  }
+
+  .wishlist-toggle-btn {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+  }
+
+  .fabric-care-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .related-products-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,255 @@
+.categories-section {
+  background: #f7f7f7;
+
+  padding: 120px 0;
+}
+
+.categories-container {
+  width: min(90%, 1400px);
+
+  margin: auto;
+}
+
+/* =========================
+   HEADING
+========================= */
+
+.categories-heading {
+  margin-bottom: 55px;
+
+  text-align: center;
+}
+
+.categories-heading > span {
+  font-family: "Montserrat", sans-serif;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 3px;
+
+  color: #25b7ed;
+}
+
+.categories-heading h2 {
+  margin-top: 12px;
+
+  font-family: "Bebas Neue", sans-serif;
+
+  font-size: clamp(4rem, 7vw, 6rem);
+
+  line-height: 0.9;
+
+  font-weight: 400;
+
+  color: #111;
+}
+
+.categories-heading h2 strong {
+  display: block;
+
+  font-weight: 400;
+
+  color: #25b7ed;
+}
+
+.categories-heading p {
+  margin-top: 20px;
+
+  font-family: "Poppins", sans-serif;
+
+  font-size: 14px;
+
+  color: #777;
+}
+
+/* =========================
+   GRID
+========================= */
+
+.categories-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 18px;
+}
+
+/* =========================
+   CARD
+========================= */
+
+.category-card {
+  display: block;
+
+  position: relative;
+
+  height: 390px;
+
+  overflow: hidden;
+
+  border-radius: 16px;
+
+  background: #111;
+
+  color: #fff;
+}
+
+.category-card img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.category-card:hover img {
+  transform: scale(1.08);
+}
+
+/* =========================
+   OVERLAY
+========================= */
+
+.category-overlay {
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.05) 20%,
+      rgba(0, 0, 0, 0.75) 100%
+    );
+
+  transition: background 0.4s ease;
+}
+
+.category-card:hover .category-overlay {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.15),
+      rgba(0, 0, 0, 0.82)
+    );
+}
+
+/* =========================
+   CONTENT
+========================= */
+
+.category-content {
+  position: absolute;
+
+  inset: auto 24px 24px 24px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+}
+
+.category-number {
+  align-self: flex-start;
+
+  font-family: "Montserrat", sans-serif;
+
+  font-size: 10px;
+
+  letter-spacing: 2px;
+
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.category-content h3 {
+  font-family: "Bebas Neue", sans-serif;
+
+  font-size: 42px;
+
+  font-weight: 400;
+
+  line-height: 0.9;
+
+  letter-spacing: 1px;
+}
+
+.category-link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 10px;
+
+  font-family: "Montserrat", sans-serif;
+
+  font-size: 10px;
+
+  font-weight: 600;
+
+  letter-spacing: 1.5px;
+
+  text-transform: uppercase;
+
+  color: #fff;
+}
+
+.category-link b {
+  color: #25b7ed;
+
+  font-size: 15px;
+
+  transition: transform 0.3s ease;
+}
+
+.category-card:hover .category-link b {
+  transform: translate(4px, -4px);
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 900px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .category-card {
+    height: 340px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .categories-section {
+    padding: 80px 0;
+  }
+
+  .categories-heading {
+    margin-bottom: 35px;
+  }
+
+  .categories-grid {
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+  }
+
+  .category-card {
+    height: 320px;
+  }
+
+  .category-content {
+    inset: auto 20px 20px 20px;
+  }
+}

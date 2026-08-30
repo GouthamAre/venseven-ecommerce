@@ -1,0 +1,76 @@
+/* =========================================================
+   VENSEVEN ADMIN CUSTOMERS STYLES
+   ========================================================= */
+
+.admin-customers-root {
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.customers-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-6, 24px);
+}
+
+.customers-eyebrow {
+  font-family: var(--font-ui, "Montserrat", sans-serif);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-accent, #25b7ed);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.customers-title {
+  font-family: var(--font-heading, "Bebas Neue", sans-serif);
+  font-size: 2.8rem;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.customers-search-card {
+  background: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: var(--space-5, 20px);
+  margin-bottom: var(--space-6, 24px);
+}
+
+.client-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-verified-icon {
+  color: var(--color-accent, #25b7ed);
+  font-size: 1rem;
+}
+
+.client-name-text {
+  color: #ffffff;
+  font-size: 0.85rem;
+}
+
+.client-email-text {
+  color: #aaaaaa;
+  font-size: 0.8rem;
+}
+
+.client-phone-text {
+  color: #888888;
+  font-size: 0.78rem;
+}
+
+.orders-count-badge {
+  font-family: var(--font-ui, "Montserrat", sans-serif);
+  font-size: 0.72rem;
+  color: #cccccc;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 8px;
+  border-radius: 3px;
+}
