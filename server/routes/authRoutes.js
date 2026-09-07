@@ -2,9 +2,20 @@ const express = require("express");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Otp = require("../models/Otp");
 const authMiddleware = require("../middleware/authMiddleware");
 const { sendPasswordResetEmail } = require("../utils/emailService");
 const { getJwtSecret, JWT_EXPIRES_IN } = require("../config/jwt");
+const {
+  otpSendLimiter,
+  otpVerifyLimiter,
+  authLimiter,
+  registerLimiter,
+  googleLimiter,
+  passwordResetLimiter,
+} = require("../middleware/rateLimiter");
+const { sendOtpSms } = require("../services/smsService");
+const { verifyGoogleIdToken } = require("../services/googleAuthService");
 
 const router = express.Router();
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
@@ -21,7 +32,7 @@ function generateToken(userId) {
  * @desc    Register a new VENSEVEN client
  * @access  Public
  */
-router.post("/register", async (req, res) => {
+router.post("/register", registerLimiter, async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
@@ -67,7 +78,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // 3. Create User
+    // 3. Create User - always force role: 'customer' to prevent privilege escalation
     const user = new User({
       name: trimmedName,
       email: trimmedEmail,
@@ -107,7 +118,7 @@ router.post("/register", async (req, res) => {
  * @desc    Authenticate client & retrieve token
  * @access  Public
  */
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -167,7 +178,7 @@ router.post("/login", async (req, res) => {
  * @desc    Generate secure password reset token and email recovery link
  * @access  Public
  */
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -246,7 +257,7 @@ router.post("/forgot-password", async (req, res) => {
  * @desc    Validate reset token and update account password
  * @access  Public
  */
-router.post("/reset-password/:token", async (req, res) => {
+router.post("/reset-password/:token", passwordResetLimiter, async (req, res) => {
   try {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
@@ -344,6 +355,286 @@ router.get("/me", authMiddleware, async (req, res) => {
 });
 
 /**
+ * @route   POST /api/auth/otp/send
+ * @desc    Generate and dispatch 6-digit OTP for phone login/signup
+ * @access  Public
+ */
+router.post("/otp/send", otpSendLimiter, async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your mobile phone number.",
+      });
+    }
+
+    const digitsOnly = String(phone).replace(/\D/g, "");
+    const normalizedPhone = digitsOnly.length > 10 ? digitsOnly.slice(-10) : digitsOnly;
+
+    if (normalizedPhone.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 10-digit mobile number.",
+      });
+    }
+
+    // Per-phone cooldown: allow new OTP only after 30 seconds
+    const recentOtp = await Otp.findOne({
+      phone: normalizedPhone,
+      createdAt: { $gt: new Date(Date.now() - 30 * 1000) },
+    });
+    if (recentOtp) {
+      return res.status(429).json({
+        success: false,
+        message: "Please wait 30 seconds before requesting another verification code.",
+      });
+    }
+
+    // Generate cryptographically secure 6-digit OTP
+    const otpCode = Otp.generateSecureOtp();
+    const otpHash = Otp.hashOtp(normalizedPhone, otpCode);
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes validity
+
+    // Invalidate existing OTPs for this number
+    await Otp.deleteMany({ phone: normalizedPhone });
+
+    // Store HMAC-SHA256 hashed OTP
+    await Otp.create({
+      phone: normalizedPhone,
+      otpHash,
+      expiresAt,
+    });
+
+    // Dispatch via configured SMS provider
+    const smsResult = await sendOtpSms(normalizedPhone, otpCode);
+
+    if (!smsResult.success) {
+      // In production, failure to dispatch SMS is a terminal delivery error
+      if (process.env.NODE_ENV === "production") {
+        return res.status(500).json({
+          success: false,
+          message: smsResult.message || "Failed to dispatch SMS verification code.",
+        });
+      }
+    }
+
+    const isProduction = process.env.NODE_ENV === "production";
+
+    return res.status(200).json({
+      success: true,
+      message: `Verification code sent to +91 ${normalizedPhone}`,
+      expiresIn: 300,
+      provider: smsResult.provider,
+      // Zero exposure in production: devOtp is strictly omitted in production environments
+      devOtp: !isProduction ? otpCode : undefined,
+    });
+  } catch (error) {
+    console.error("[OTP Send Error]:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to dispatch verification code. Please try again.",
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/otp/verify
+ * @desc    Verify phone OTP and authenticate/register client
+ * @access  Public
+ */
+router.post("/otp/verify", otpVerifyLimiter, async (req, res) => {
+  try {
+    const { phone, otp, name } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number and verification code are required.",
+      });
+    }
+
+    const digitsOnly = String(phone).replace(/\D/g, "");
+    const normalizedPhone = digitsOnly.length > 10 ? digitsOnly.slice(-10) : digitsOnly;
+    const candidateOtp = String(otp).trim();
+
+    const record = await Otp.findOne({
+      phone: normalizedPhone,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification code has expired or was not requested. Please request a new code.",
+      });
+    }
+
+    // Verify candidate OTP against HMAC-SHA256 stored hash
+    const isValid = Otp.verifyOtpCode(normalizedPhone, candidateOtp, record.otpHash);
+
+    if (!isValid) {
+      record.attempts = (record.attempts || 0) + 1;
+      if (record.attempts >= 5) {
+        await Otp.deleteOne({ _id: record._id });
+        return res.status(400).json({
+          success: false,
+          message: "Too many incorrect attempts. Please request a new code.",
+        });
+      }
+      await record.save();
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect verification code. Please double check and try again.",
+      });
+    }
+
+    // Single-use: delete verified OTP record immediately to prevent replay
+    await Otp.deleteOne({ _id: record._id });
+
+    // Check if user exists by phone
+    let user = await User.findOne({ phone: normalizedPhone });
+
+    if (!user) {
+      // Auto-provision new customer account with customer role
+      const generatedEmail = `user_${normalizedPhone}@venseven.in`;
+      const existingByEmail = await User.findOne({ email: generatedEmail });
+
+      if (existingByEmail) {
+        user = existingByEmail;
+        user.phone = normalizedPhone;
+        await user.save();
+      } else {
+        const clientName = (name && name.trim()) || `Client ${normalizedPhone.slice(-4)}`;
+        user = new User({
+          name: clientName,
+          email: generatedEmail,
+          phone: normalizedPhone,
+          authProvider: "phone",
+          role: "customer",
+        });
+        await user.save();
+      }
+    }
+    // Note: If user already exists (whether admin or customer), their role is preserved!
+
+    const token = generateToken(user._id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Signed in successfully via phone verification.",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        avatar: user.avatar,
+        authProvider: user.authProvider,
+      },
+    });
+  } catch (error) {
+    console.error("[OTP Verify Error]:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error occurred during verification. Please try again.",
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/google
+ * @desc    Authenticate or register client using cryptographically verified Google ID token
+ * @access  Public
+ */
+router.post("/google", googleLimiter, async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential || typeof credential !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Google ID token (credential) is required.",
+      });
+    }
+
+    // Cryptographically verify ID token against Google's tokeninfo/certs
+    const verification = await verifyGoogleIdToken(credential);
+
+    if (!verification.verified && !verification.valid) {
+      return res.status(401).json({
+        success: false,
+        message: verification.error || "Google credential could not be verified.",
+      });
+    }
+
+    const payloadInfo = verification.payload || verification;
+    const googleEmail = payloadInfo.email;
+    const googleName = payloadInfo.name;
+    const googleSub = payloadInfo.sub;
+    const googlePicture = payloadInfo.picture;
+
+    const cleanEmail = googleEmail.trim().toLowerCase();
+
+    // Check if user exists by email or googleId
+    let user = await User.findOne({
+      $or: [{ email: cleanEmail }, ...(googleSub ? [{ googleId: googleSub }] : [])],
+    });
+
+    if (user) {
+      let modified = false;
+      if (googleSub && !user.googleId) {
+        user.googleId = googleSub;
+        modified = true;
+      }
+      if (googlePicture && !user.avatar) {
+        user.avatar = googlePicture;
+        modified = true;
+      }
+      if (modified) {
+        await user.save();
+      }
+      // Note: Existing user's role (whether admin or customer) is preserved!
+    } else {
+      // Auto-provision new customer account - explicitly set role to "customer"
+      user = new User({
+        name: googleName || "VENSEVEN Member",
+        email: cleanEmail,
+        googleId: googleSub || null,
+        authProvider: "google",
+        avatar: googlePicture || "",
+        role: "customer",
+      });
+      await user.save();
+    }
+
+    const token = generateToken(user._id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Signed in successfully with Google.",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        avatar: user.avatar,
+        authProvider: user.authProvider,
+      },
+    });
+  } catch (error) {
+    console.error("[Google Auth Error]:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error occurred during Google sign in. Please try again.",
+    });
+  }
+});
+
+/**
  * @route   POST /api/auth/logout
  * @desc    Client logout acknowledgment
  * @access  Public
@@ -355,4 +646,18 @@ router.post("/logout", (req, res) => {
   });
 });
 
+// Non-production endpoint for automated security test isolation
+if (process.env.NODE_ENV !== "production") {
+  router.post("/test/reset-limits", (req, res) => {
+    const { resetAllRateLimiters } = require("../middleware/rateLimiter");
+    resetAllRateLimiters();
+    return res.status(200).json({
+      success: true,
+      message: "Rate limiters reset for testing.",
+    });
+  });
+}
+
 module.exports = router;
+
+

@@ -13,10 +13,20 @@ async function authFetch(endpoint, options = {}) {
     ...(options.headers || {}),
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch {
+    const error = new Error(
+      "Unable to connect to authentication service. Please verify your connection or server status."
+    );
+    error.status = 0;
+    error.data = { success: false, message: error.message };
+    throw error;
+  }
 
   const data = await response.json().catch(() => ({
     success: false,
@@ -121,3 +131,45 @@ export async function logoutUser() {
     return { success: true };
   }
 }
+
+/**
+ * Request 6-digit OTP for phone login
+ *
+ * @param {string} phone
+ * @returns {Promise<{ success: boolean, message: string, expiresIn?: number, devOtp?: string }>}
+ */
+export async function requestPhoneOtp(phone) {
+  return await authFetch("/auth/otp/send", {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
+}
+
+/**
+ * Verify phone OTP and authenticate client
+ *
+ * @param {string} phone
+ * @param {string} otp
+ * @param {string} [name]
+ * @returns {Promise<{ success: boolean, token: string, user: object }>}
+ */
+export async function verifyPhoneOtp(phone, otp, name = "") {
+  return await authFetch("/auth/otp/verify", {
+    method: "POST",
+    body: JSON.stringify({ phone, otp, name }),
+  });
+}
+
+/**
+ * Authenticate with Google ID token credential
+ *
+ * @param {string} credential - Google ID token JWT
+ * @returns {Promise<{ success: boolean, token: string, user: object }>}
+ */
+export async function authenticateWithGoogle(credential) {
+  return await authFetch("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ credential }),
+  });
+}
+

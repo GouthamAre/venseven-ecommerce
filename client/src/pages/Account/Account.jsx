@@ -1,11 +1,10 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiLock,
   FiMail,
   FiUser,
-  FiPhone,
   FiEye,
   FiEyeOff,
   FiArrowRight,
@@ -16,6 +15,9 @@ import {
   FiStar,
   FiLogOut,
   FiShoppingBag,
+  FiEdit2,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi";
 
 import Navbar from "../../components/layout/Navbar/Navbar";
@@ -23,16 +25,61 @@ import { useAuth } from "../../context/useAuth";
 import { forgotPassword } from "../../services/authService";
 import "./Account.css";
 
-function Account() {
-  const { user, isAuthenticated, login, register, logout, authError, clearError } =
-    useAuth();
+function Account({ initialView }) {
+  const {
+    user,
+    isAuthenticated,
+    login,
+    register,
+    sendOtp,
+    verifyOtp,
+    loginWithGoogle,
+    logout,
+    authError,
+    clearError,
+  } = useAuth();
 
-  const [view, setView] = useState("login"); // 'login' | 'register' | 'forgot'
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Resolve initial view from props, pathname, or query parameters
+  const resolveView = useCallback(() => {
+    if (initialView) return initialView;
+    const tabParam = (
+      searchParams.get("tab") ||
+      searchParams.get("mode") ||
+      ""
+    ).toLowerCase();
+    if (tabParam === "forgot" || tabParam === "reset") return "forgot";
+    if (tabParam === "register" || tabParam === "signup") return "portal";
+    if (location.pathname.includes("forgot")) return "forgot";
+    return "portal";
+  }, [initialView, searchParams, location.pathname]);
+
+  const [view, setView] = useState(resolveView); // 'portal' | 'forgot'
+  const [showEmailAuth, setShowEmailAuth] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Form states
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  // Phone + OTP authentication state
+  const [phone, setPhone] = useState("");
+  const [otpStep, setOtpStep] = useState("phone"); // 'phone' | 'verify'
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [clientName, setClientName] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const [devOtpHint, setDevOtpHint] = useState("");
+  const otpInputRefs = useRef([]);
+  const googleBtnContainerRef = useRef(null);
+  const gsiInitializedRef = useRef(false);
+
+  // Traditional Email/Password state (Preserved for existing accounts & Admin)
+  const [emailAuthMode, setEmailAuthMode] = useState("login"); // 'login' | 'register'
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  });
   const [registerData, setRegisterData] = useState({
     name: "",
     email: "",
@@ -47,7 +94,34 @@ function Account() {
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset errors when switching views
+  // Synchronize view if URL or prop changes
+  useEffect(() => {
+    const target = resolveView();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setView(target);
+    setLocalError("");
+    setFeedbackMsg("");
+    clearError();
+  }, [resolveView, clearError]);
+
+  // Resend Countdown Timer
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
+
+  // Auto-redirect helper on successful authentication
+  const handleAuthSuccess = useCallback(() => {
+    const redirectUrl = searchParams.get("redirect");
+    if (redirectUrl) {
+      navigate(redirectUrl, { replace: true });
+    }
+  }, [searchParams, navigate]);
+
+  // Reset feedback & error when switching views
   const handleSwitchView = (newView) => {
     setView(newView);
     setLocalError("");
@@ -55,7 +129,233 @@ function Account() {
     clearError();
   };
 
-  // Login Submit Handler
+  // Google Sign-In Credential Callback
+  const handleGoogleCredentialResponse = useCallback(
+    async (response) => {
+      if (response?.credential) {
+        setIsSubmitting(true);
+        setLocalError("");
+        setFeedbackMsg("Verifying Google account...");
+        const res = await loginWithGoogle(response.credential);
+        setIsSubmitting(false);
+        if (res.success) {
+          setFeedbackMsg("Signed in with Google successfully!");
+          handleAuthSuccess();
+        } else {
+          setLocalError(res.error || "Google authentication failed.");
+        }
+      } else {
+        setIsSubmitting(false);
+        setLocalError("No Google credentials returned.");
+      }
+    },
+    [loginWithGoogle, handleAuthSuccess]
+  );
+
+  // Initialize Google Identity Services & Render Button
+  useEffect(() => {
+    const googleClientId = import.meta.env?.VITE_GOOGLE_CLIENT_ID;
+    if (!googleClientId) return;
+
+    let checkInterval = null;
+
+    const initGsi = () => {
+      if (window.google?.accounts?.id) {
+        try {
+          if (!gsiInitializedRef.current) {
+            window.google.accounts.id.initialize({
+              client_id: googleClientId,
+              callback: handleGoogleCredentialResponse,
+              auto_select: false,
+              cancel_on_tap_outside: true,
+            });
+            gsiInitializedRef.current = true;
+          }
+
+          if (googleBtnContainerRef.current && !googleBtnContainerRef.current.hasChildNodes()) {
+            window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
+              theme: "outline",
+              size: "large",
+              width: 320,
+              text: "continue_with",
+              shape: "rectangular",
+              logo_alignment: "left",
+            });
+          }
+        } catch (initErr) {
+          console.warn("[Google GSI Init Warning]:", initErr);
+        }
+      }
+    };
+
+    if (window.google?.accounts?.id) {
+      initGsi();
+    } else {
+      checkInterval = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          initGsi();
+          clearInterval(checkInterval);
+        }
+      }, 250);
+    }
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, [handleGoogleCredentialResponse, view]);
+
+  // -------------------------------------------------------------
+  // GOOGLE SIGN-IN HANDLER
+  // -------------------------------------------------------------
+  const handleGoogleAuth = async () => {
+    setLocalError("");
+    setFeedbackMsg("");
+
+    try {
+      const googleClientId = import.meta.env?.VITE_GOOGLE_CLIENT_ID;
+
+      if (!googleClientId) {
+        setLocalError(
+          "Google Sign-In is not configured (VITE_GOOGLE_CLIENT_ID required). Please sign in using Phone OTP or Email & Password."
+        );
+        return;
+      }
+
+      if (window.google?.accounts?.id) {
+        // First try clicking rendered button if present
+        const renderedBtn =
+          googleBtnContainerRef.current?.querySelector('[role="button"]') ||
+          googleBtnContainerRef.current?.querySelector('div[tabindex="0"]');
+        if (renderedBtn) {
+          renderedBtn.click();
+          return;
+        }
+
+        setIsSubmitting(true);
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            setIsSubmitting(false);
+          }
+        });
+        return;
+      }
+
+      setLocalError(
+        "Google Sign-In script is loading or unavailable. Please sign in with Phone OTP or Email & Password."
+      );
+    } catch (err) {
+      setIsSubmitting(false);
+      setLocalError(err.message || "Failed to initialize Google authentication.");
+    }
+  };
+
+  // -------------------------------------------------------------
+  // PHONE + OTP HANDLERS
+  // -------------------------------------------------------------
+  const handleSendOtp = async (e) => {
+    if (e) e.preventDefault();
+    setLocalError("");
+    setFeedbackMsg("");
+
+    const digitsOnly = phone.replace(/\D/g, "");
+    if (digitsOnly.length !== 10) {
+      setLocalError("Please enter a valid 10-digit mobile phone number.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await sendOtp(digitsOnly);
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setOtpStep("verify");
+      setResendCountdown(45);
+      setFeedbackMsg(result.message || `Verification code sent to +91 ${digitsOnly}`);
+      if (result.devOtp) {
+        setDevOtpHint(result.devOtp);
+      }
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 100);
+    } else {
+      setLocalError(result.error || "Failed to dispatch verification code.");
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    setLocalError("");
+    setFeedbackMsg("");
+
+    const code = otpDigits.join("");
+    if (code.length !== 6) {
+      setLocalError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await verifyOtp(phone, code, clientName.trim());
+    setIsSubmitting(false);
+
+    if (result.success) {
+      setFeedbackMsg("Verification successful! Welcome to VENSEVEN.");
+      handleAuthSuccess();
+    } else {
+      setLocalError(result.error || "Invalid verification code. Please check and try again.");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCountdown > 0) return;
+    setOtpDigits(["", "", "", "", "", ""]);
+    await handleSendOtp();
+  };
+
+  const handleOtpDigitChange = (index, value) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const newDigits = [...otpDigits];
+    newDigits[index] = digit;
+    setOtpDigits(newDigits);
+
+    if (localError) setLocalError("");
+
+    // Auto-advance focus to next input
+    if (digit && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+
+    const newDigits = [...otpDigits];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = pasted[i] || "";
+    }
+    setOtpDigits(newDigits);
+
+    const nextIndex = Math.min(pasted.length, 5);
+    otpInputRefs.current[nextIndex]?.focus();
+  };
+
+  const handleFillDevOtp = () => {
+    if (!devOtpHint) return;
+    const digits = devOtpHint.split("").slice(0, 6);
+    setOtpDigits(digits);
+    if (localError) setLocalError("");
+  };
+
+  // -------------------------------------------------------------
+  // TRADITIONAL EMAIL / PASSWORD HANDLERS
+  // -------------------------------------------------------------
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLocalError("");
@@ -73,12 +373,13 @@ function Account() {
     const result = await login(emailTrimmed, passwordTrimmed);
     setIsSubmitting(false);
 
-    if (!result.success) {
+    if (result.success) {
+      handleAuthSuccess();
+    } else {
       setLocalError(result.error || "Sign in failed. Please check your credentials.");
     }
   };
 
-  // Register Submit Handler
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setLocalError("");
@@ -114,12 +415,13 @@ function Account() {
 
     if (result.success) {
       setFeedbackMsg(`Account created successfully for ${result.user.name}!`);
+      handleAuthSuccess();
     } else {
       setLocalError(result.error || "Registration failed. Please try again.");
     }
   };
 
-  // Real Forgot Password Handler
+  // Password Recovery Submit Handler
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     setLocalError("");
@@ -150,7 +452,6 @@ function Account() {
         setLocalError(result?.message || "Failed to process recovery request.");
       }
     } catch (err) {
-      console.error("[Forgot Password UI Error]:", err);
       setLocalError(
         err.data?.message || err.message || "Unable to send recovery email. Please try again."
       );
@@ -176,7 +477,7 @@ function Account() {
                 <span className="account-eyebrow">CLIENT PRIVILEGES</span>
                 <h1 className="account-title">WELCOME BACK</h1>
                 <p className="account-subtitle">
-                  Signed in as <strong>{user.email}</strong>. Access your curated preferences and priority acquisitions.
+                  Signed in as <strong>{user.email || user.phone}</strong>. Access your curated preferences and priority acquisitions.
                 </p>
               </header>
 
@@ -188,9 +489,19 @@ function Account() {
                       {user.name ? user.name.charAt(0).toUpperCase() : "V"}
                     </div>
                     <div className="profile-headline">
-                      <span className="profile-badge">VENSEVEN MEMBER</span>
+                      <span className="profile-badge">
+                        {user.authProvider === "google"
+                          ? "GOOGLE VERIFIED CLIENT"
+                          : user.authProvider === "phone"
+                          ? "MOBILE VERIFIED CLIENT"
+                          : "VENSEVEN MEMBER"}
+                      </span>
                       <h2 className="profile-name">{user.name}</h2>
-                      <span className="profile-email">{user.email}</span>
+                      <span className="profile-email">
+                        {user.email.includes("@venseven.in")
+                          ? `Mobile: +91 ${user.phone}`
+                          : user.email}
+                      </span>
                     </div>
                   </div>
 
@@ -202,12 +513,14 @@ function Account() {
                     <div className="profile-detail-item">
                       <span className="detail-label">CONTACT NUMBER</span>
                       <strong className="detail-value">
-                        {user.phone || "Not specified"}
+                        {user.phone ? `+91 ${user.phone}` : "Not specified"}
                       </strong>
                     </div>
                     <div className="profile-detail-item">
-                      <span className="detail-label">EXPRESS DELIVERY</span>
-                      <strong className="detail-value">Insured Delhivery / BlueDart</strong>
+                      <span className="detail-label">AUTH METHOD</span>
+                      <strong className="detail-value" style={{ textTransform: "capitalize" }}>
+                        {user.authProvider || "Standard"}
+                      </strong>
                     </div>
                     <div className="profile-detail-item">
                       <span className="detail-label">STUDIO LOCATION</span>
@@ -217,7 +530,11 @@ function Account() {
 
                   <div className="profile-actions-row">
                     {user?.role === "admin" && (
-                      <Link to="/admin" className="profile-action-btn primary" style={{ background: "#ffffff", color: "#000000" }}>
+                      <Link
+                        to="/admin"
+                        className="profile-action-btn primary"
+                        style={{ background: "#ffffff", color: "#000000" }}
+                      >
                         <FiShield />
                         <span>ADMIN DASHBOARD</span>
                       </Link>
@@ -249,11 +566,11 @@ function Account() {
                   </div>
                 </div>
 
-                {/* Right: Benefits Sidebar */}
+                {/* Right: Studio Benefits */}
                 <aside className="account-benefits-sidebar">
                   <div className="benefits-card">
-                    <span className="benefits-eyebrow">ACTIVE PRIVILEGES</span>
-                    <h3 className="benefits-title">YOUR CLIENT ADVANTAGES</h3>
+                    <span className="benefits-eyebrow">YOUR PRIVILEGES</span>
+                    <h3 className="benefits-title">VIP CLIENT BENEFITS</h3>
 
                     <div className="benefits-list">
                       <div className="benefit-item">
@@ -261,8 +578,8 @@ function Account() {
                           <FiPackage />
                         </div>
                         <div>
-                          <strong>Automatic Checkout Prefill</strong>
-                          <p>Your name and email are synced for swift acquisitions.</p>
+                          <strong>Seamless Tracking &amp; Invoicing</strong>
+                          <p>Monitor your bespoke tailored deliveries and orders.</p>
                         </div>
                       </div>
 
@@ -302,58 +619,24 @@ function Account() {
             </div>
           ) : (
             /* =========================================================
-               STATE B: UNAUTHENTICATED SIGN IN / REGISTER FORMS
+               STATE B: UNAUTHENTICATED FAST SIGN IN / REGISTRATION
             ========================================================= */
             <>
-              {/* Header */}
               <header className="account-header">
                 <span className="account-eyebrow">CLIENT PORTAL</span>
                 <h1 className="account-title">
-                  {view === "login" && "SIGN IN"}
-                  {view === "register" && "CREATE ACCOUNT"}
-                  {view === "forgot" && "RESET PASSWORD"}
+                  {view === "forgot" ? "RESET PASSWORD" : "FAST SIGN IN"}
                 </h1>
                 <p className="account-subtitle">
-                  {view === "login" &&
-                    "Access your curated wardrobe, saved orders, and private releases."}
-                  {view === "register" &&
-                    "Join the VENSEVEN sartorial circle for exclusive releases and faster checkout."}
-                  {view === "forgot" &&
-                    "Enter your email address to receive password recovery instructions."}
+                  {view === "forgot"
+                    ? "Enter your email address to receive password recovery instructions."
+                    : "Instant, frictionless access to your curated wardrobe, orders, and private drops."}
                 </p>
               </header>
 
               <div className="account-layout">
                 {/* Main Auth Form Card */}
                 <div className="account-card">
-                  {/* Tab Navigation (Login / Register) */}
-                  {view !== "forgot" && (
-                    <div className="account-tab-bar" role="tablist">
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={view === "login"}
-                        className={`account-tab-btn ${
-                          view === "login" ? "active" : ""
-                        }`}
-                        onClick={() => handleSwitchView("login")}
-                      >
-                        SIGN IN
-                      </button>
-                      <button
-                        type="button"
-                        role="tab"
-                        aria-selected={view === "register"}
-                        className={`account-tab-btn ${
-                          view === "register" ? "active" : ""
-                        }`}
-                        onClick={() => handleSwitchView("register")}
-                      >
-                        CREATE ACCOUNT
-                      </button>
-                    </div>
-                  )}
-
                   {/* Alert Feedback Messages */}
                   <AnimatePresence mode="wait">
                     {activeError && (
@@ -380,339 +663,400 @@ function Account() {
                     )}
                   </AnimatePresence>
 
-                  {/* VIEW: LOGIN */}
-                  {view === "login" && (
-                    <motion.form
-                      key="login-form"
-                      onSubmit={handleLoginSubmit}
-                      className="auth-form"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {/* Email */}
-                      <div className="auth-field-group">
-                        <label htmlFor="login-email">
-                          Email Address <span className="req">*</span>
-                        </label>
-                        <div className="input-icon-wrapper">
-                          <FiMail className="field-icon" />
-                          <input
-                            type="email"
-                            id="login-email"
-                            value={loginData.email}
-                            onChange={(e) => {
-                              setLoginData({
-                                ...loginData,
-                                email: e.target.value,
-                              });
-                              if (localError) setLocalError("");
-                              clearError();
-                            }}
-                            placeholder="e.g. name@example.com"
-                            required
-                            autoComplete="email"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Password */}
-                      <div className="auth-field-group">
-                        <div className="label-row">
-                          <label htmlFor="login-password">
-                            Password <span className="req">*</span>
-                          </label>
-                          <button
-                            type="button"
-                            className="forgot-password-link"
-                            onClick={() => handleSwitchView("forgot")}
-                          >
-                            Forgot password?
-                          </button>
-                        </div>
-                        <div className="input-icon-wrapper">
-                          <FiLock className="field-icon" />
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            id="login-password"
-                            value={loginData.password}
-                            onChange={(e) => {
-                              setLoginData({
-                                ...loginData,
-                                password: e.target.value,
-                              });
-                              if (localError) setLocalError("");
-                              clearError();
-                            }}
-                            placeholder="••••••••"
-                            required
-                            autoComplete="current-password"
-                          />
-                          <button
-                            type="button"
-                            className="pwd-toggle-btn"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={
-                              showPassword ? "Hide password" : "Show password"
-                            }
-                          >
-                            {showPassword ? <FiEyeOff /> : <FiEye />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Remember Me */}
-                      <div className="auth-checkbox-row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={loginData.remember}
-                            onChange={(e) =>
-                              setLoginData({
-                                ...loginData,
-                                remember: e.target.checked,
-                              })
-                            }
-                          />
-                          <span>Remember me on this device</span>
-                        </label>
-                      </div>
-
-                      {/* Submit */}
-                      <button
-                        type="submit"
-                        className="auth-submit-btn"
-                        disabled={isSubmitting}
-                      >
-                        <span>
-                          {isSubmitting ? "SIGNING IN..." : "SIGN IN"}
-                        </span>
-                        <FiArrowRight />
-                      </button>
-
-                      {/* Switch Footer */}
-                      <div className="auth-card-footer">
-                        <span>Don&apos;t have an account?</span>
+                  {/* ====================================================
+                      VIEW: FAST PORTAL AUTH (GOOGLE + PHONE OTP)
+                  ==================================================== */}
+                  {view === "portal" && (
+                    <div className="fast-auth-flow">
+                      {/* 1. ONE-TAP GOOGLE AUTH BUTTON & OFFICIAL GSI SLOT */}
+                      <div className="google-auth-wrapper">
+                        <div ref={googleBtnContainerRef} className="google-rendered-button-slot" />
                         <button
                           type="button"
-                          className="switch-view-btn"
-                          onClick={() => handleSwitchView("register")}
+                          className="auth-google-btn"
+                          onClick={handleGoogleAuth}
+                          disabled={isSubmitting}
                         >
-                          Create one now →
+                          <svg className="google-icon-svg" viewBox="0 0 24 24">
+                            <path
+                              fill="#4285F4"
+                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            />
+                            <path
+                              fill="#34A853"
+                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            />
+                            <path
+                              fill="#FBBC05"
+                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                            />
+                            <path
+                              fill="#EA4335"
+                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                            />
+                          </svg>
+                          <span>CONTINUE WITH GOOGLE</span>
                         </button>
                       </div>
-                    </motion.form>
-                  )}
 
-                  {/* VIEW: REGISTER */}
-                  {view === "register" && (
-                    <motion.form
-                      key="register-form"
-                      onSubmit={handleRegisterSubmit}
-                      className="auth-form"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {/* Full Name */}
-                      <div className="auth-field-group">
-                        <label htmlFor="reg-name">
-                          Full Name <span className="req">*</span>
-                        </label>
-                        <div className="input-icon-wrapper">
-                          <FiUser className="field-icon" />
-                          <input
-                            type="text"
-                            id="reg-name"
-                            value={registerData.name}
-                            onChange={(e) => {
-                              setRegisterData({
-                                ...registerData,
-                                name: e.target.value,
-                              });
-                              if (localError) setLocalError("");
-                              clearError();
-                            }}
-                            placeholder="e.g. Aryan Sharma"
-                            required
-                            autoComplete="name"
-                          />
-                        </div>
+                      {/* 2. SECTION DIVIDER */}
+                      <div className="auth-divider">
+                        <span>OR SIGN IN WITH PHONE &amp; OTP</span>
                       </div>
 
-                      {/* Email & Phone Grid */}
-                      <div className="auth-fields-row">
-                        <div className="auth-field-group">
-                          <label htmlFor="reg-email">
-                            Email Address <span className="req">*</span>
-                          </label>
-                          <div className="input-icon-wrapper">
-                            <FiMail className="field-icon" />
-                            <input
-                              type="email"
-                              id="reg-email"
-                              value={registerData.email}
-                              onChange={(e) => {
-                                setRegisterData({
-                                  ...registerData,
-                                  email: e.target.value,
-                                });
-                                if (localError) setLocalError("");
-                                clearError();
+                      {/* 3. PHONE & OTP FORM */}
+                      {otpStep === "phone" ? (
+                        <form onSubmit={handleSendOtp} className="auth-form">
+                          <div className="auth-field-group">
+                            <label htmlFor="phone-number">
+                              Mobile Number <span className="req">*</span>
+                            </label>
+                            <div className="phone-input-wrapper">
+                              <div className="phone-prefix-badge">
+                                <span className="country-flag-icon">🇮🇳</span>
+                                <span>+91</span>
+                              </div>
+                              <input
+                                type="tel"
+                                id="phone-number"
+                                className="phone-input-field"
+                                value={phone}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                  setPhone(raw);
+                                  if (localError) setLocalError("");
+                                  clearError();
+                                }}
+                                placeholder="Enter 10-digit mobile number"
+                                autoFocus
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="auth-field-group">
+                            <label htmlFor="client-name">
+                              Your Name <span style={{ color: "#888888", textTransform: "none", fontWeight: 400 }}>(Optional for new clients)</span>
+                            </label>
+                            <div className="input-icon-wrapper">
+                              <FiUser className="field-icon" />
+                              <input
+                                type="text"
+                                id="client-name"
+                                value={clientName}
+                                onChange={(e) => setClientName(e.target.value)}
+                                placeholder="e.g. Aryan Sharma"
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="auth-submit-btn"
+                            disabled={isSubmitting || phone.replace(/\D/g, "").length !== 10}
+                          >
+                            <span>{isSubmitting ? "SENDING CODE..." : "GET VERIFICATION CODE"}</span>
+                            <FiArrowRight />
+                          </button>
+                        </form>
+                      ) : (
+                        <form onSubmit={handleVerifyOtp} className="auth-form">
+                          {/* OTP Number Header Pill */}
+                          <div className="otp-header-strip">
+                            <div className="otp-target-text">
+                              <span className="otp-target-label">CODE SENT TO</span>
+                              <span className="otp-target-number">+91 {phone}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="otp-change-number-btn"
+                              onClick={() => {
+                                setOtpStep("phone");
+                                setOtpDigits(["", "", "", "", "", ""]);
+                                setLocalError("");
                               }}
-                              placeholder="aryan@example.com"
-                              required
-                              autoComplete="email"
-                            />
+                            >
+                              <FiEdit2 />
+                              <span>Change</span>
+                            </button>
                           </div>
-                        </div>
 
-                        <div className="auth-field-group">
-                          <label htmlFor="reg-phone">Phone Number</label>
-                          <div className="input-icon-wrapper">
-                            <FiPhone className="field-icon" />
-                            <input
-                              type="tel"
-                              id="reg-phone"
-                              value={registerData.phone}
-                              onChange={(e) =>
-                                setRegisterData({
-                                  ...registerData,
-                                  phone: e.target.value,
-                                })
-                              }
-                              placeholder="+91 98765 43210"
-                              autoComplete="tel"
-                            />
+                          <div className="auth-field-group">
+                            <label>Enter 6-Digit Verification Code</label>
+                            <div className="otp-container">
+                              {otpDigits.map((digit, idx) => (
+                                <input
+                                  key={idx}
+                                  ref={(el) => (otpInputRefs.current[idx] = el)}
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={1}
+                                  value={digit}
+                                  onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                  onPaste={handleOtpPaste}
+                                  className={`otp-digit-input ${digit ? "filled" : ""}`}
+                                />
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Password */}
-                      <div className="auth-field-group">
-                        <label htmlFor="reg-password">
-                          Password <span className="req">*</span>
-                        </label>
-                        <div className="input-icon-wrapper">
-                          <FiLock className="field-icon" />
-                          <input
-                            type={showPassword ? "text" : "password"}
-                            id="reg-password"
-                            value={registerData.password}
-                            onChange={(e) => {
-                              setRegisterData({
-                                ...registerData,
-                                password: e.target.value,
-                              });
-                              if (localError) setLocalError("");
-                              clearError();
-                            }}
-                            placeholder="Minimum 6 characters"
-                            required
-                            autoComplete="new-password"
-                          />
+                          {/* Timer & Dev Hint */}
+                          <div className="otp-meta-row">
+                            <div className="otp-timer-box">
+                              {resendCountdown > 0 ? (
+                                <span>Resend OTP in <strong>{resendCountdown}s</strong></span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="otp-resend-link"
+                                  onClick={handleResendOtp}
+                                >
+                                  Resend Code
+                                </button>
+                              )}
+                            </div>
+
+                            {devOtpHint && (
+                              <button
+                                type="button"
+                                className="dev-otp-badge"
+                                onClick={handleFillDevOtp}
+                                title="Click to auto-paste generated demo OTP"
+                              >
+                                <span>Demo OTP: <strong>{devOtpHint}</strong> (Click to fill)</span>
+                              </button>
+                            )}
+                          </div>
+
                           <button
-                            type="button"
-                            className="pwd-toggle-btn"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={
-                              showPassword ? "Hide password" : "Show password"
-                            }
+                            type="submit"
+                            className="auth-submit-btn"
+                            disabled={isSubmitting || otpDigits.join("").length !== 6}
                           >
-                            {showPassword ? <FiEyeOff /> : <FiEye />}
+                            <span>{isSubmitting ? "VERIFYING..." : "ENTER CLIENT PORTAL"}</span>
+                            <FiArrowRight />
                           </button>
-                        </div>
-                      </div>
+                        </form>
+                      )}
 
-                      {/* Confirm Password */}
-                      <div className="auth-field-group">
-                        <label htmlFor="reg-confirm-password">
-                          Confirm Password <span className="req">*</span>
-                        </label>
-                        <div className="input-icon-wrapper">
-                          <FiLock className="field-icon" />
-                          <input
-                            type={showConfirmPassword ? "text" : "password"}
-                            id="reg-confirm-password"
-                            value={registerData.confirmPassword}
-                            onChange={(e) => {
-                              setRegisterData({
-                                ...registerData,
-                                confirmPassword: e.target.value,
-                              });
-                              if (localError) setLocalError("");
-                              clearError();
-                            }}
-                            placeholder="Re-enter password"
-                            required
-                            autoComplete="new-password"
-                          />
-                          <button
-                            type="button"
-                            className="pwd-toggle-btn"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                            aria-label={
-                              showConfirmPassword
-                                ? "Hide password"
-                                : "Show password"
-                            }
-                          >
-                            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Terms */}
-                      <div className="auth-checkbox-row">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={registerData.agreeTerms}
-                            onChange={(e) =>
-                              setRegisterData({
-                                ...registerData,
-                                agreeTerms: e.target.checked,
-                              })
-                            }
-                            required
-                          />
-                          <span>
-                            I agree to VENSEVEN Terms &amp; Privacy Policy
-                          </span>
-                        </label>
-                      </div>
-
-                      {/* Submit */}
-                      <button
-                        type="submit"
-                        className="auth-submit-btn"
-                        disabled={isSubmitting}
-                      >
-                        <span>
-                          {isSubmitting
-                            ? "CREATING ACCOUNT..."
-                            : "CREATE ACCOUNT"}
-                        </span>
-                        <FiArrowRight />
-                      </button>
-
-                      {/* Switch Footer */}
-                      <div className="auth-card-footer">
-                        <span>Already have an account?</span>
+                      {/* 4. PREFER EMAIL & PASSWORD COLLAPSIBLE (For Admin & Existing Accounts) */}
+                      <div className="auth-legacy-toggle">
                         <button
                           type="button"
-                          className="switch-view-btn"
-                          onClick={() => handleSwitchView("login")}
+                          className="legacy-toggle-btn"
+                          onClick={() => setShowEmailAuth(!showEmailAuth)}
                         >
-                          Sign in here →
+                          <span>
+                            {showEmailAuth
+                              ? "Hide standard Email & Password sign-in"
+                              : "Prefer sign-in with Email & Password? Click here"}
+                          </span>
+                          {showEmailAuth ? (
+                            <FiChevronUp className="legacy-toggle-chevron rotated" />
+                          ) : (
+                            <FiChevronDown className="legacy-toggle-chevron" />
+                          )}
                         </button>
+
+                        <AnimatePresence>
+                          {showEmailAuth && (
+                            <motion.div
+                              className="legacy-email-section"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                            >
+                              <div className="account-tab-bar" style={{ marginBottom: "20px" }}>
+                                <button
+                                  type="button"
+                                  className={`account-tab-btn ${emailAuthMode === "login" ? "active" : ""}`}
+                                  onClick={() => setEmailAuthMode("login")}
+                                >
+                                  EMAIL SIGN IN
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`account-tab-btn ${emailAuthMode === "register" ? "active" : ""}`}
+                                  onClick={() => setEmailAuthMode("register")}
+                                >
+                                  EMAIL REGISTER
+                                </button>
+                              </div>
+
+                              {emailAuthMode === "login" ? (
+                                <form onSubmit={handleLoginSubmit} className="auth-form">
+                                  <div className="auth-field-group">
+                                    <label htmlFor="legacy-login-email">Email Address</label>
+                                    <div className="input-icon-wrapper">
+                                      <FiMail className="field-icon" />
+                                      <input
+                                        type="email"
+                                        id="legacy-login-email"
+                                        value={loginData.email}
+                                        onChange={(e) =>
+                                          setLoginData({ ...loginData, email: e.target.value })
+                                        }
+                                        placeholder="name@example.com"
+                                        required
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="auth-field-group">
+                                    <div className="label-row">
+                                      <label htmlFor="legacy-login-pwd">Password</label>
+                                      <button
+                                        type="button"
+                                        className="forgot-password-link"
+                                        onClick={() => handleSwitchView("forgot")}
+                                      >
+                                        Forgot password?
+                                      </button>
+                                    </div>
+                                    <div className="input-icon-wrapper">
+                                      <FiLock className="field-icon" />
+                                      <input
+                                        type={showPassword ? "text" : "password"}
+                                        id="legacy-login-pwd"
+                                        value={loginData.password}
+                                        onChange={(e) =>
+                                          setLoginData({ ...loginData, password: e.target.value })
+                                        }
+                                        placeholder="••••••••"
+                                        required
+                                      />
+                                      <button
+                                        type="button"
+                                        className="pwd-toggle-btn"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                      >
+                                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="submit"
+                                    className="auth-submit-btn"
+                                    disabled={isSubmitting}
+                                  >
+                                    <span>{isSubmitting ? "SIGNING IN..." : "SIGN IN WITH EMAIL"}</span>
+                                    <FiArrowRight />
+                                  </button>
+                                </form>
+                              ) : (
+                                <form onSubmit={handleRegisterSubmit} className="auth-form">
+                                  <div className="auth-field-group">
+                                    <label htmlFor="legacy-reg-name">Full Name</label>
+                                    <div className="input-icon-wrapper">
+                                      <FiUser className="field-icon" />
+                                      <input
+                                        type="text"
+                                        id="legacy-reg-name"
+                                        value={registerData.name}
+                                        onChange={(e) =>
+                                          setRegisterData({ ...registerData, name: e.target.value })
+                                        }
+                                        placeholder="Aryan Sharma"
+                                        required
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="auth-field-group">
+                                    <label htmlFor="legacy-reg-email">Email Address</label>
+                                    <div className="input-icon-wrapper">
+                                      <FiMail className="field-icon" />
+                                      <input
+                                        type="email"
+                                        id="legacy-reg-email"
+                                        value={registerData.email}
+                                        onChange={(e) =>
+                                          setRegisterData({ ...registerData, email: e.target.value })
+                                        }
+                                        placeholder="aryan@example.com"
+                                        required
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="auth-field-group">
+                                    <label htmlFor="legacy-reg-pwd">Password</label>
+                                    <div className="input-icon-wrapper">
+                                      <FiLock className="field-icon" />
+                                      <input
+                                        type={showPassword ? "text" : "password"}
+                                        id="legacy-reg-pwd"
+                                        value={registerData.password}
+                                        onChange={(e) =>
+                                          setRegisterData({
+                                            ...registerData,
+                                            password: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Min. 6 characters"
+                                        required
+                                      />
+                                      <button
+                                        type="button"
+                                        className="pwd-toggle-btn"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                      >
+                                        {showPassword ? <FiEyeOff /> : <FiEye />}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className="auth-field-group">
+                                    <label htmlFor="legacy-reg-cpwd">Confirm Password</label>
+                                    <div className="input-icon-wrapper">
+                                      <FiLock className="field-icon" />
+                                      <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        id="legacy-reg-cpwd"
+                                        value={registerData.confirmPassword}
+                                        onChange={(e) =>
+                                          setRegisterData({
+                                            ...registerData,
+                                            confirmPassword: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Re-enter password"
+                                        required
+                                      />
+                                      <button
+                                        type="button"
+                                        className="pwd-toggle-btn"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                      >
+                                        {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="submit"
+                                    className="auth-submit-btn"
+                                    disabled={isSubmitting}
+                                  >
+                                    <span>{isSubmitting ? "CREATING..." : "CREATE ACCOUNT WITH EMAIL"}</span>
+                                    <FiArrowRight />
+                                  </button>
+                                </form>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                    </motion.form>
+                    </div>
                   )}
 
-                  {/* VIEW: FORGOT PASSWORD */}
+                  {/* ====================================================
+                      VIEW: FORGOT PASSWORD
+                  ==================================================== */}
                   {view === "forgot" && (
                     <motion.form
                       key="forgot-form"
@@ -727,7 +1071,6 @@ function Account() {
                         account to receive password recovery instructions.
                       </p>
 
-                      {/* Email */}
                       <div className="auth-field-group">
                         <label htmlFor="forgot-email">
                           Registered Email Address <span className="req">*</span>
@@ -749,7 +1092,6 @@ function Account() {
                         </div>
                       </div>
 
-                      {/* Submit */}
                       <button
                         type="submit"
                         className="auth-submit-btn"
@@ -763,12 +1105,11 @@ function Account() {
                         <FiArrowRight />
                       </button>
 
-                      {/* Back to Login */}
                       <div className="auth-card-footer">
                         <button
                           type="button"
                           className="switch-view-btn center-btn"
-                          onClick={() => handleSwitchView("login")}
+                          onClick={() => handleSwitchView("portal")}
                         >
                           ← Return to Sign In
                         </button>
@@ -781,7 +1122,7 @@ function Account() {
                 <aside className="account-benefits-sidebar">
                   <div className="benefits-card">
                     <span className="benefits-eyebrow">VENSEVEN PRIVILEGES</span>
-                    <h3 className="benefits-title">WHY CREATE AN ACCOUNT?</h3>
+                    <h3 className="benefits-title">WHY SIGN IN WITH US?</h3>
 
                     <div className="benefits-list">
                       <div className="benefit-item">
@@ -789,10 +1130,9 @@ function Account() {
                           <FiPackage />
                         </div>
                         <div>
-                          <strong>Order Tracking &amp; History</strong>
+                          <strong>Frictionless 1-Tap Access</strong>
                           <p>
-                            Instant access to dispatch updates and past garment
-                            orders.
+                            No passwords to remember. Instant access via Google or Phone OTP.
                           </p>
                         </div>
                       </div>
@@ -802,10 +1142,9 @@ function Account() {
                           <FiHeart />
                         </div>
                         <div>
-                          <strong>Synced Wishlist</strong>
+                          <strong>Synced Sartorial Wishlist</strong>
                           <p>
-                            Save your preferred pieces across all mobile and
-                            desktop devices.
+                            Save your preferred pieces across all mobile and desktop devices.
                           </p>
                         </div>
                       </div>
@@ -817,8 +1156,7 @@ function Account() {
                         <div>
                           <strong>Private Drop Access</strong>
                           <p>
-                            Priority notification for limited seasonal releases
-                            and archival drops.
+                            Priority notification for limited seasonal releases and archival drops.
                           </p>
                         </div>
                       </div>
@@ -828,10 +1166,9 @@ function Account() {
                           <FiShield />
                         </div>
                         <div>
-                          <strong>Express Checkout</strong>
+                          <strong>Studio Guarantee &amp; Express Checkout</strong>
                           <p>
-                            Securely saved delivery addresses for frictionless
-                            acquisition.
+                            Securely saved delivery addresses for rapid, tailored dispatch.
                           </p>
                         </div>
                       </div>

@@ -13,12 +13,19 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env*.example
 server/.env
 server/.env.*
 !server/.env.example
+!server/.env*.example
 client/.env
 client/.env.*
 !client/.env.example
+!client/.env*.example
+venseven-cms/.env
+venseven-cms/.env.*
+!venseven-cms/.env.example
+!venseven-cms/.env*.example
 
 # Logs and debug files
 logs/

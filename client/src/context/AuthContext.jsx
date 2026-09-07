@@ -5,6 +5,9 @@ import {
   loginUser,
   getCurrentUser,
   logoutUser,
+  requestPhoneOtp,
+  verifyPhoneOtp,
+  authenticateWithGoogle,
 } from "../services/authService";
 
 const STORAGE_TOKEN_KEY = "venseven_auth_token";
@@ -95,7 +98,7 @@ export function AuthProvider({ children }) {
     };
   }, [logout]);
 
-  // Sign In action
+  // Sign In action (Email/Password)
   const login = useCallback(async (email, password) => {
     setIsLoading(true);
     setAuthError(null);
@@ -123,7 +126,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Register action
+  // Register action (Email/Password)
   const register = useCallback(async (name, email, password, phone = "") => {
     setIsLoading(true);
     setAuthError(null);
@@ -151,6 +154,84 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Send Phone OTP
+  const sendOtp = useCallback(async (phone) => {
+    setIsLoading(true);
+    setAuthError(null);
+
+    try {
+      const response = await requestPhoneOtp(phone);
+      return {
+        success: true,
+        message: response.message || "Verification code dispatched.",
+        devOtp: response.devOtp,
+        expiresIn: response.expiresIn || 300,
+      };
+    } catch (error) {
+      const message = error.data?.message || error.message || "Failed to send verification code.";
+      setAuthError(message);
+      return { success: false, error: message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Verify Phone OTP
+  const verifyOtp = useCallback(async (phone, otp, name = "") => {
+    setIsLoading(true);
+    setAuthError(null);
+
+    try {
+      const response = await verifyPhoneOtp(phone, otp, name);
+
+      if (response?.success && response?.token && response?.user) {
+        setToken(response.token);
+        setUser(response.user);
+
+        localStorage.setItem(STORAGE_TOKEN_KEY, response.token);
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(response.user));
+
+        return { success: true, user: response.user };
+      } else {
+        throw new Error(response?.message || "Verification failed.");
+      }
+    } catch (error) {
+      const message = error.data?.message || error.message || "Invalid or expired verification code.";
+      setAuthError(message);
+      return { success: false, error: message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Google Authentication
+  const loginWithGoogle = useCallback(async (credential) => {
+    setIsLoading(true);
+    setAuthError(null);
+
+    try {
+      const response = await authenticateWithGoogle(credential);
+
+      if (response?.success && response?.token && response?.user) {
+        setToken(response.token);
+        setUser(response.user);
+
+        localStorage.setItem(STORAGE_TOKEN_KEY, response.token);
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(response.user));
+
+        return { success: true, user: response.user };
+      } else {
+        throw new Error(response?.message || "Google authentication failed.");
+      }
+    } catch (error) {
+      const message = error.data?.message || error.message || "Google sign in failed.";
+      setAuthError(message);
+      return { success: false, error: message };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const clearError = useCallback(() => {
     setAuthError(null);
   }, []);
@@ -164,10 +245,25 @@ export function AuthProvider({ children }) {
       authError,
       login,
       register,
+      sendOtp,
+      verifyOtp,
+      loginWithGoogle,
       logout,
       clearError,
     }),
-    [user, token, isLoading, authError, login, register, logout, clearError]
+    [
+      user,
+      token,
+      isLoading,
+      authError,
+      login,
+      register,
+      sendOtp,
+      verifyOtp,
+      loginWithGoogle,
+      logout,
+      clearError,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

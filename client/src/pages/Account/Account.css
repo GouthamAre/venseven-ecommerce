@@ -618,4 +618,346 @@
     width: 100%;
     justify-content: center;
   }
+
+  .otp-container {
+    gap: 6px !important;
+  }
+
+  .otp-digit-input {
+    width: 42px !important;
+    height: 50px !important;
+    font-size: 20px !important;
+  }
+}
+
+/* =========================================================
+   GOOGLE & PHONE OTP AUTHENTICATION STYLING
+.google-auth-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.google-rendered-button-slot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.google-rendered-button-slot:not(:empty) + .auth-google-btn {
+  display: none;
+}
+
+.auth-google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 6px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #1e293b;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-google-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.auth-google-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.auth-google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon-svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+
+/* Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-divider span {
+  padding: 0 16px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+/* Phone input */
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #fbfbfb;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.phone-input-wrapper:focus-within {
+  background: #ffffff;
+  border-color: #25b7ed;
+  box-shadow: 0 0 0 3px rgba(37, 183, 237, 0.15);
+}
+
+.phone-prefix-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 13px 14px;
+  background: #f1f5f9;
+  border-right: 1px solid #e2e8f0;
+  font-family: "Montserrat", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  user-select: none;
+}
+
+.country-flag-icon {
+  font-size: 15px;
+}
+
+.phone-input-field {
+  flex: 1;
+  border: none !important;
+  background: transparent !important;
+  padding: 13px 14px !important;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: #0f172a;
+  outline: none;
+}
+
+.phone-input-field::placeholder {
+  font-size: 13px;
+  letter-spacing: normal;
+  color: #94a3b8;
+}
+
+/* OTP Step Header & Number Pill */
+.otp-header-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.otp-target-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.otp-target-label {
+  font-family: "Montserrat", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.otp-target-number {
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.otp-change-number-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.otp-change-number-btn:hover {
+  background: #ffffff;
+  border-color: #25b7ed;
+  color: #25b7ed;
+}
+
+/* 6-digit OTP Box inputs */
+.otp-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.otp-digit-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-family: "Montserrat", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.otp-digit-input:focus {
+  background: #ffffff;
+  border-color: #25b7ed;
+  box-shadow: 0 0 0 3px rgba(37, 183, 237, 0.2);
+  transform: translateY(-2px);
+}
+
+.otp-digit-input.filled {
+  background: #ffffff;
+  border-color: #64748b;
+}
+
+/* Timer and Meta Row */
+.otp-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.otp-timer-box {
+  font-family: "Poppins", sans-serif;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.otp-resend-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #25b7ed;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.otp-resend-link:hover {
+  color: #179cd0;
+}
+
+.dev-otp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(37, 183, 237, 0.1);
+  border: 1px dashed #25b7ed;
+  border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dev-otp-badge:hover {
+  background: rgba(37, 183, 237, 0.2);
+}
+
+/* Legacy Email Toggle */
+.auth-legacy-toggle {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+}
+
+.legacy-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  font-family: "Montserrat", sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.legacy-toggle-btn:hover {
+  color: #0f172a;
+}
+
+.legacy-toggle-chevron {
+  font-size: 14px;
+  transition: transform 0.25s ease;
+}
+
+.legacy-toggle-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.legacy-email-section {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
 }

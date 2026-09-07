@@ -24,12 +24,27 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: false,
       minlength: [6, "Password must be at least 6 characters"],
     },
     phone: {
       type: String,
       trim: true,
+      default: "",
+      index: true,
+    },
+    googleId: {
+      type: String,
+      default: null,
+      index: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google", "phone"],
+      default: "local",
+    },
+    avatar: {
+      type: String,
       default: "",
     },
     role: {
@@ -55,7 +70,7 @@ const userSchema = new mongoose.Schema(
 
 // Pre-save hook: Hash password before saving if modified
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) {
+  if (!this.password || !this.isModified("password")) {
     return;
   }
   const salt = await bcrypt.genSalt(10);

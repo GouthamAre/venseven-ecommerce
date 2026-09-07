@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
@@ -56,7 +56,17 @@ function AppContent() {
         <Route path="/collections" element={<Collections />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+        
+        {/* Client Portal & Auth Routes */}
         <Route path="/account" element={<Account />} />
+        <Route path="/login" element={<Account initialView="login" />} />
+        <Route path="/signin" element={<Navigate to="/account" replace />} />
+        <Route path="/sign-in" element={<Navigate to="/account" replace />} />
+        <Route path="/client-portal" element={<Navigate to="/account" replace />} />
+        <Route path="/register" element={<Account initialView="register" />} />
+        <Route path="/signup" element={<Account initialView="register" />} />
+        <Route path="/sign-up" element={<Account initialView="register" />} />
+        <Route path="/forgot-password" element={<Account initialView="forgot" />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Secure Admin Dashboard Routes */}

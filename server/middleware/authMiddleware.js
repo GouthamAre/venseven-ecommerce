@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { getJwtSecret } = require("../config/jwt");
+const { getJwtSecret, JWT_ALGORITHM } = require("../config/jwt");
 
 /**
  * Authentication Middleware
@@ -26,10 +26,10 @@ async function authMiddleware(req, res, next) {
       });
     }
 
-    // Verify token
+    // Verify token with explicit algorithm
     let decoded;
     try {
-      decoded = jwt.verify(token, getJwtSecret());
+      decoded = jwt.verify(token, getJwtSecret(), { algorithms: [JWT_ALGORITHM] });
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({

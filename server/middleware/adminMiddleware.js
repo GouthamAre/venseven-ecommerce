@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { getJwtSecret } = require("../config/jwt");
+const { getJwtSecret, JWT_ALGORITHM } = require("../config/jwt");
 
 /**
  * Admin authorization middleware.
@@ -22,8 +22,8 @@ async function adminMiddleware(req, res, next) {
       });
     }
 
-    // Verify JWT
-    const decoded = jwt.verify(token, getJwtSecret());
+    // Verify JWT with explicit algorithm
+    const decoded = jwt.verify(token, getJwtSecret(), { algorithms: [JWT_ALGORITHM] });
 
     if (!decoded || !decoded.id) {
       return res.status(401).json({

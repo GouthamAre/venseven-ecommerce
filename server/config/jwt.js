@@ -1,9 +1,10 @@
 /**
- * Centralized JWT Configuration & Validation Helper
+ * Centralized JWT Configuration & Cryptographic Validation Helper
  *
- * Ensures secure cryptographic key management and prevents accidental
- * execution with weak or missing keys in production environments.
+ * Enforces strong cryptographic keys and prevents algorithm confusion attacks.
  */
+
+const JWT_ALGORITHM = "HS256";
 
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
@@ -15,19 +16,29 @@ function getJwtSecret() {
         "FATAL CONFIGURATION ERROR: JWT_SECRET environment variable is required in production."
       );
     }
-    return "venseven_jwt_secret_dev_key_2026";
+    return "venseven_jwt_secret_dev_key_2026_minimum_32_characters_for_hmac_sha256";
   }
 
-  if (isProduction && secret.includes("dev_key")) {
-    throw new Error(
-      "FATAL SECURITY ERROR: Insecure development JWT_SECRET detected in production."
-    );
+  const cleanSecret = secret.trim();
+
+  if (isProduction) {
+    if (
+      cleanSecret.length < 32 ||
+      cleanSecret.includes("dev_key") ||
+      cleanSecret.includes("secret") ||
+      cleanSecret.includes("change_me")
+    ) {
+      throw new Error(
+        "FATAL SECURITY ERROR: Insecure, weak, or development JWT_SECRET detected in production. Must be at least 32 cryptographically random characters."
+      );
+    }
   }
 
-  return secret.trim();
+  return cleanSecret;
 }
 
 module.exports = {
   getJwtSecret,
+  JWT_ALGORITHM,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
 };
