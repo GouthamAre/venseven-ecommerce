@@ -372,6 +372,25 @@ router.post("/verify", async (req, res) => {
 });
 
 /**
+ * @route   GET /api/payments/webhook
+ * @desc    Webhook health & status endpoint for browser and diagnostic checks
+ * @access  Public
+ */
+router.get("/webhook", (req, res) => {
+  const isConfigured = Boolean(process.env.RAZORPAY_WEBHOOK_SECRET);
+  res.status(200).json({
+    success: true,
+    service: "VENSEVEN Razorpay Webhook Gateway",
+    status: "active",
+    message:
+      "This endpoint is actively listening for cryptographic HTTP POST webhook events from Razorpay.",
+    expectedMethod: "POST",
+    webhookSecretConfigured: isConfigured,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
  * @route   POST /api/payments/webhook
  * @desc    Listen for Razorpay server-to-server events (order.paid, payment.captured, payment.failed)
  * @access  Public (Cryptographically verified via X-Razorpay-Signature)
