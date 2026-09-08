@@ -18,11 +18,14 @@ router.post("/create-order", async (req, res) => {
     const { orderNumber } = req.body;
 
     if (!orderNumber) {
+      console.warn("[Payment]: create-order request rejected (missing orderNumber).");
       return res.status(400).json({
         success: false,
         message: "Order number is required to initialize payment.",
       });
     }
+
+    console.log(`[Payment]: create-order endpoint reached for order: ${orderNumber}`);
 
     // 1. Retrieve the existing order from MongoDB
     const order = await Order.findOne({
@@ -30,6 +33,7 @@ router.post("/create-order", async (req, res) => {
     });
 
     if (!order) {
+      console.warn(`[Payment]: Order "${orderNumber}" not found in database.`);
       return res.status(404).json({
         success: false,
         message: `Order "${orderNumber}" not found.`,
@@ -38,6 +42,7 @@ router.post("/create-order", async (req, res) => {
 
     // 2. Check if order is already paid
     if (order.payment && order.payment.status === "Paid") {
+      console.warn(`[Payment]: Order ${order.orderNumber} is already marked Paid.`);
       return res.status(400).json({
         success: false,
         message: "This order has already been paid and confirmed.",
@@ -55,82 +60,76 @@ router.post("/create-order", async (req, res) => {
       });
     }
 
+    console.log(
+      `[Payment]: Order ${order.orderNumber} validated. Amount: ₹${order.pricing.total} (${amountInPaise} paise)`
+    );
+
     const razorpay = getRazorpayInstance();
+
+    if (!razorpay || !isRazorpayConfigured()) {
+      console.error(
+        `[Payment Error]: Razorpay credentials not configured (RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing).`
+      );
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay payment gateway credentials are not configured on the server.",
+      });
+    }
 
     // 4. Create Razorpay Order
     let createdRazorpayOrder = null;
-
-    if (razorpay && isRazorpayConfigured()) {
-      const options = {
-        amount: amountInPaise,
-        currency: "INR",
-        receipt: order.orderNumber,
-        notes: {
-          orderNumber: order.orderNumber,
-          customerName: order.customer.name,
-          customerEmail: order.customer.email,
-        },
-      };
-
-      try {
-        createdRazorpayOrder = await razorpay.orders.create(options);
-      } catch (apiErr) {
-        const isProduction = process.env.NODE_ENV === "production";
-        if (!isProduction || (process.env.RAZORPAY_KEY_SECRET || "").includes("dev")) {
-          console.warn(
-            `[Payment Dev Notice]: Razorpay API call returned error (${apiErr.description || apiErr.message}). Using dev-mode payment token for local development.`
-          );
-        } else {
-          throw apiErr;
-        }
-      }
-    }
-
-    if (createdRazorpayOrder) {
-      // Save Razorpay Order ID to MongoDB order
-      order.payment.razorpayOrderId = createdRazorpayOrder.id;
-      order.payment.method = "RAZORPAY";
-      await order.save();
-
-      return res.status(200).json({
-        success: true,
-        razorpayOrderId: createdRazorpayOrder.id,
-        amount: amountInPaise,
-        currency: "INR",
-        keyId: process.env.RAZORPAY_KEY_ID,
+    const options = {
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: order.orderNumber,
+      notes: {
         orderNumber: order.orderNumber,
-        customer: {
-          name: order.customer.name,
-          email: order.customer.email,
-          phone: order.customer.phone,
-        },
-      });
-    } else {
-      // Fallback for development without live API keys
-      console.warn(
-        `[Payment Warning]: Generating local test-mode payment token for order ${order.orderNumber}.`
+        customerName: order.customer.name,
+        customerEmail: order.customer.email,
+      },
+    };
+
+    try {
+      createdRazorpayOrder = await razorpay.orders.create(options);
+      console.log(
+        `[Payment]: Razorpay order created successfully. Razorpay Order ID: ${createdRazorpayOrder.id} for Order: ${order.orderNumber}`
       );
-
-      const devOrderId = `order_test_${Date.now()}`;
-      order.payment.razorpayOrderId = devOrderId;
-      order.payment.method = "RAZORPAY_DEV";
-      await order.save();
-
-      return res.status(200).json({
-        success: true,
-        razorpayOrderId: devOrderId,
-        amount: amountInPaise,
-        currency: "INR",
-        keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder",
-        orderNumber: order.orderNumber,
-        isDevFallback: true,
-        customer: {
-          name: order.customer.name,
-          email: order.customer.email,
-          phone: order.customer.phone,
-        },
+    } catch (apiErr) {
+      const errorDescription =
+        apiErr?.error?.description ||
+        apiErr?.description ||
+        apiErr?.message ||
+        "Failed to initialize payment with Razorpay gateway.";
+      console.error(
+        `[Payment Error]: Razorpay API order creation failed for ${order.orderNumber}: ${errorDescription} (Status: ${apiErr.statusCode || 502})`
+      );
+      return res.status(apiErr.statusCode || 502).json({
+        success: false,
+        message:
+          apiErr.statusCode === 401
+            ? "Razorpay authentication failed. Please verify your RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in server/.env."
+            : errorDescription,
       });
     }
+
+    // Save Razorpay Order ID to MongoDB order
+    order.payment.razorpayOrderId = createdRazorpayOrder.id;
+    order.payment.method = "RAZORPAY";
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      razorpayOrderId: createdRazorpayOrder.id,
+      amount: amountInPaise,
+      currency: "INR",
+      keyId: process.env.RAZORPAY_KEY_ID,
+      orderNumber: order.orderNumber,
+      customer: {
+        name: order.customer.name,
+        email: order.customer.email,
+        phone: order.customer.phone,
+      },
+    });
   } catch (error) {
     console.error("[Create Payment Order Error]:", error);
     return res.status(500).json({
@@ -155,11 +154,16 @@ router.post("/verify", async (req, res) => {
     } = req.body;
 
     if (!orderNumber || !razorpay_order_id || !razorpay_payment_id) {
+      console.warn("[Payment]: verify request rejected (missing verification parameters).");
       return res.status(400).json({
         success: false,
         message: "Missing payment verification parameters.",
       });
     }
+
+    console.log(
+      `[Payment]: Verification request received for order: ${orderNumber}, Razorpay Order ID: ${razorpay_order_id}, Payment ID: ${razorpay_payment_id}`
+    );
 
     // 1. Retrieve the existing order from MongoDB
     const order = await Order.findOne({
@@ -167,6 +171,7 @@ router.post("/verify", async (req, res) => {
     });
 
     if (!order) {
+      console.warn(`[Payment]: Verify order "${orderNumber}" not found.`);
       return res.status(404).json({
         success: false,
         message: `Order "${orderNumber}" not found.`,
@@ -175,6 +180,7 @@ router.post("/verify", async (req, res) => {
 
     // 2. Idempotency Check: If already marked Paid and inventory already deducted, return success immediately
     if (order.payment && order.payment.status === "Paid" && order.inventoryDeducted === true) {
+      console.log(`[Payment]: Order ${order.orderNumber} already marked Paid. Returning cached success.`);
       return res.status(200).json({
         success: true,
         message: "Payment already verified and confirmed.",
@@ -184,52 +190,60 @@ router.post("/verify", async (req, res) => {
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
+    if (!keySecret) {
+      console.error(
+        `[Payment Error]: RAZORPAY_KEY_SECRET is not configured on the server. Cannot verify payment.`
+      );
+      return res.status(500).json({
+        success: false,
+        message: "Payment gateway secret is not configured on the server.",
+      });
+    }
+
     // 3. Cryptographic Signature Verification
-    if (keySecret) {
-      if (!razorpay_signature) {
-        order.payment.status = "Failed";
-        await order.save();
-        return res.status(400).json({
-          success: false,
-          message: "Payment signature missing from verification request.",
-        });
-      }
+    if (!razorpay_signature) {
+      console.warn(`[Payment Security Alert]: Missing signature for order ${order.orderNumber}.`);
+      order.payment.status = "Failed";
+      await order.save();
+      return res.status(400).json({
+        success: false,
+        message: "Payment signature missing from verification request.",
+      });
+    }
 
-      // Expected signature: HMAC-SHA256 of "razorpay_order_id|razorpay_payment_id"
-      const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
-      const generatedSignature = crypto
-        .createHmac("sha256", keySecret)
-        .update(payload)
-        .digest("hex");
+    // Expected signature: HMAC-SHA256 of "razorpay_order_id|razorpay_payment_id"
+    const payload = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const generatedSignature = crypto
+      .createHmac("sha256", keySecret)
+      .update(payload)
+      .digest("hex");
 
-      const generatedBuffer = Buffer.from(generatedSignature, "utf8");
-      const receivedBuffer = Buffer.from(razorpay_signature, "utf8");
+    const generatedBuffer = Buffer.from(generatedSignature, "utf8");
+    const receivedBuffer = Buffer.from(razorpay_signature, "utf8");
 
-      let isValidSignature = false;
-      if (generatedBuffer.length === receivedBuffer.length) {
-        isValidSignature = crypto.timingSafeEqual(
-          generatedBuffer,
-          receivedBuffer
-        );
-      }
-
-      if (!isValidSignature) {
-        console.warn(
-          `[Payment Security Alert]: Invalid signature for order ${order.orderNumber}.`
-        );
-        order.payment.status = "Failed";
-        await order.save();
-        return res.status(400).json({
-          success: false,
-          message: "Payment signature verification failed.",
-        });
-      }
-    } else {
-      // Dev mode fallback without secret key
-      console.warn(
-        `[Payment Dev Warning]: No RAZORPAY_KEY_SECRET found. Accepting verification for dev testing.`
+    let isValidSignature = false;
+    if (generatedBuffer.length === receivedBuffer.length) {
+      isValidSignature = crypto.timingSafeEqual(
+        generatedBuffer,
+        receivedBuffer
       );
     }
+
+    if (!isValidSignature) {
+      console.warn(
+        `[Payment Security Alert]: Invalid cryptographic signature for order ${order.orderNumber}.`
+      );
+      order.payment.status = "Failed";
+      await order.save();
+      return res.status(400).json({
+        success: false,
+        message: "Payment signature verification failed.",
+      });
+    }
+
+    console.log(
+      `[Payment]: Signature verified successfully for order ${order.orderNumber}.`
+    );
 
     // 4. Atomic Inventory Deduction with Anti-Overselling Guard & Rollback
     if (!order.inventoryDeducted) {

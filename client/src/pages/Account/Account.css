@@ -632,23 +632,17 @@
 
 /* =========================================================
    GOOGLE & PHONE OTP AUTHENTICATION STYLING
+========================================================= */
+
 .google-auth-wrapper {
   position: relative;
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-bottom: 2px;
-}
-
-.google-rendered-button-slot {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  min-height: 44px;
-}
-
-.google-rendered-button-slot:not(:empty) + .auth-google-btn {
-  display: none;
+  align-items: center;
+  margin-bottom: 4px;
+  overflow: hidden;
+  border-radius: 6px;
 }
 
 .auth-google-btn {
@@ -657,30 +651,30 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 13px 20px;
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
   border-radius: 6px;
   font-family: "Montserrat", sans-serif;
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   color: #1e293b;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 48px;
+  box-sizing: border-box;
 }
 
 .auth-google-btn:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #cbd5e1;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
 }
 
 .auth-google-btn:active:not(:disabled) {
-  transform: translateY(0);
+  background: #f1f5f9;
 }
 
 .auth-google-btn:disabled {
@@ -689,9 +683,40 @@
 }
 
 .google-icon-svg {
-  width: 19px;
-  height: 19px;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
   flex-shrink: 0;
+  display: inline-block;
+}
+
+.google-rendered-button-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.0001;
+  z-index: 2;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.google-rendered-button-slot iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  transform: scale(1.3);
+  transform-origin: center center;
+  cursor: pointer !important;
 }
 
 /* Divider */

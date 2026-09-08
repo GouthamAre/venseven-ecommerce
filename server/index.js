@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const orderRoutes = require("./routes/orderRoutes");
@@ -64,8 +65,12 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     const cleanOrigin = origin ? origin.replace(/\/+$/, "") : "";
+    const isVercelDeployment =
+      cleanOrigin.startsWith("https://venseven-ecommerce") &&
+      cleanOrigin.endsWith(".vercel.app");
+
     // Allow non-browser requests (Postman, curl, server-to-server) or matching origins
-    if (!origin || allowedOrigins.includes(cleanOrigin) || !isProduction) {
+    if (!origin || allowedOrigins.includes(cleanOrigin) || isVercelDeployment || !isProduction) {
       return callback(null, true);
     }
     return callback(new Error(`Origin ${origin} not allowed by CORS policy.`));
@@ -87,6 +92,14 @@ app.use(
   })
 );
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Serve static product images directly
+app.use(
+  "/images/products",
+  express.static(path.join(__dirname, "public/images/products"), {
+    maxAge: "7d",
+  })
+);
 
 // Health Check Endpoint
 app.get("/api/health", (req, res) => {

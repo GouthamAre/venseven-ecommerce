@@ -82,8 +82,13 @@ function OrderSuccess() {
 
       const keyId =
         paymentOrderData.keyId ||
-        import.meta.env?.VITE_RAZORPAY_KEY_ID ||
-        "rzp_test_placeholder";
+        import.meta.env?.VITE_RAZORPAY_KEY_ID;
+
+      if (!keyId || keyId === "rzp_test_placeholder") {
+        throw new Error(
+          "Payment gateway key is not configured. Missing Razorpay Key ID (VITE_RAZORPAY_KEY_ID)."
+        );
+      }
 
       const razorpayOptions = {
         key: keyId,
@@ -128,7 +133,17 @@ function OrderSuccess() {
         },
       };
 
-      const rzpInstance = new window.Razorpay(razorpayOptions);
+      let rzpInstance;
+      try {
+        rzpInstance = new window.Razorpay(razorpayOptions);
+      } catch (initErr) {
+        console.error("[Razorpay Instantiation Error]:", initErr);
+        throw new Error(
+          initErr.message ||
+            "Failed to open Razorpay payment window. Please check your browser settings or disable popup blockers."
+        );
+      }
+
       rzpInstance.open();
     } catch (err) {
       console.error("Retry payment error:", err);

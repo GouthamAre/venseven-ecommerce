@@ -201,7 +201,7 @@ function Checkout() {
       const sdkLoaded = await loadRazorpaySDK();
       if (!sdkLoaded) {
         throw new Error(
-          "Unable to initialize secure payment gateway. Please check your internet connection and try again."
+          "Unable to load secure Razorpay payment SDK. Please verify your internet connection or disable ad/popup blockers and try again."
         );
       }
 
@@ -209,14 +209,19 @@ function Checkout() {
       const paymentOrderData = await createPaymentOrder(createdOrder.orderNumber);
 
       if (!paymentOrderData?.success || !paymentOrderData?.razorpayOrderId) {
-        throw new Error(paymentOrderData?.message || "Failed to initialize payment gateway.");
+        throw new Error(paymentOrderData?.message || "Failed to initialize payment gateway order.");
       }
 
       // 3. Configure Razorpay Checkout Popup
       const keyId =
         paymentOrderData.keyId ||
-        import.meta.env?.VITE_RAZORPAY_KEY_ID ||
-        "rzp_test_placeholder";
+        import.meta.env?.VITE_RAZORPAY_KEY_ID;
+
+      if (!keyId || keyId === "rzp_test_placeholder") {
+        throw new Error(
+          "Payment gateway key is not configured. Missing Razorpay Key ID (VITE_RAZORPAY_KEY_ID / RAZORPAY_KEY_ID). Please check environment settings."
+        );
+      }
 
       const razorpayOptions = {
         key: keyId,
@@ -274,22 +279,32 @@ function Checkout() {
             setIsSubmitting(false);
             setPaymentStage("idle");
             setSubmitError(
-              "Payment was not completed. Your bag items have been preserved."
+              "Payment window was closed. Your bag items have been preserved; you can retry anytime."
             );
           },
         },
       };
 
-      const rzpInstance = new window.Razorpay(razorpayOptions);
+      let rzpInstance;
+      try {
+        rzpInstance = new window.Razorpay(razorpayOptions);
+      } catch (initErr) {
+        console.error("[Razorpay Instantiation Error]:", initErr);
+        throw new Error(
+          initErr.message ||
+            "Failed to open Razorpay payment window. Please check your browser settings or disable popup blockers."
+        );
+      }
 
       rzpInstance.on("payment.failed", function (response) {
         console.error("[Razorpay Payment Failed]:", response.error);
         setIsSubmitting(false);
         setPaymentStage("idle");
-        setSubmitError(
+        const failureReason =
           response.error?.description ||
-            "Payment failed. You can try again with a different payment method."
-        );
+          response.error?.reason ||
+          "Payment was declined or failed. Please try again with a different payment method.";
+        setSubmitError(failureReason);
       });
 
       rzpInstance.open();

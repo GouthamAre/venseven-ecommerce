@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiSearch, FiX, FiArrowRight } from "react-icons/fi";
 
 import { useSearch } from "../../../context/useSearch";
-import ProductCard from "../../products/ProductCard/ProductCard";
+import CloudinaryImage from "../CloudinaryImage/CloudinaryImage";
 import { getProducts } from "../../../services/productService";
 import { products as localProductsFallback } from "../../../data/products";
 import "./SearchModal.css";
@@ -19,6 +19,73 @@ const CATEGORY_SUGGESTIONS = [
   "FORMAL",
   "CASUAL",
 ];
+
+function CompactProductItem({ product, onClick }) {
+  if (!product) return null;
+  const pId = product.id || product._id;
+  const productUrl = `/product/${product.slug || pId}`;
+
+  const localMatch = localProductsFallback.find(
+    (lp) =>
+      (product.slug && lp.slug.toLowerCase() === product.slug.toLowerCase()) ||
+      String(lp.id) === String(pId) ||
+      (product.name && lp.name.toLowerCase() === product.name.toLowerCase())
+  );
+  const fallbackSrc = localMatch?.image || "";
+  const rawImage =
+    product.image ||
+    product.primaryImage ||
+    product.images?.[0]?.url ||
+    "";
+  const isBrokenRemote =
+    typeof rawImage === "string" &&
+    (rawImage.includes("venseven/products/") || rawImage.includes("placeholder"));
+
+  const imageSrc = isBrokenRemote || !rawImage ? fallbackSrc : rawImage;
+
+  const formattedPrice =
+    typeof product.price === "number"
+      ? `₹${product.price.toLocaleString("en-IN")}`
+      : product.price?.startsWith?.("₹")
+      ? product.price
+      : `₹${product.price || product.numericPrice || "1,999"}`;
+
+  return (
+    <Link
+      to={productUrl}
+      className="search-compact-item"
+      onClick={onClick}
+      aria-label={`View ${product.name}`}
+    >
+      <div className="search-compact-thumb">
+        <CloudinaryImage
+          src={imageSrc}
+          fallbackSrc={fallbackSrc}
+          alt={product.name}
+          loading="lazy"
+        />
+        {product.isNewArrival ? (
+          <span className="search-compact-badge new">NEW</span>
+        ) : product.isBestSeller ? (
+          <span className="search-compact-badge best">BEST</span>
+        ) : null}
+      </div>
+
+      <div className="search-compact-info">
+        <h4 className="search-compact-name">{product.name}</h4>
+        <span className="search-compact-meta">
+          {product.category || "Collection"}
+          {product.color ? ` · ${product.color}` : ""}
+        </span>
+        <span className="search-compact-price">{formattedPrice}</span>
+      </div>
+
+      <div className="search-compact-action" aria-hidden="true">
+        <FiArrowRight />
+      </div>
+    </Link>
+  );
+}
 
 function SearchModalContent({ onClose }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,9 +138,12 @@ function SearchModalContent({ onClose }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  // Close search automatically on route change
+  // Close search automatically on route change (only after initial mount)
+  const initialPathRef = useRef(location.pathname);
   useEffect(() => {
-    onClose();
+    if (initialPathRef.current !== location.pathname) {
+      onClose();
+    }
   }, [location.pathname, onClose]);
 
   // Real-time matching filter against catalog
@@ -118,8 +188,13 @@ function SearchModalContent({ onClose }) {
   };
 
   const handleViewAllInShop = () => {
+    const query = searchQuery.trim();
     onClose();
-    navigate(`/shop?search=${encodeURIComponent(trimmedQuery)}`);
+    if (query) {
+      navigate(`/shop?search=${encodeURIComponent(query)}`);
+    } else {
+      navigate("/shop");
+    }
   };
 
   const handleClear = () => {
@@ -131,11 +206,10 @@ function SearchModalContent({ onClose }) {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (searchResults.length === 1) {
+    const query = searchQuery.trim();
+    if (query) {
       onClose();
-      navigate(`/product/${searchResults[0].slug}`);
-    } else if (searchResults.length > 0) {
-      handleViewAllInShop();
+      navigate(`/shop?search=${encodeURIComponent(query)}`);
     }
   };
 
@@ -159,16 +233,26 @@ function SearchModalContent({ onClose }) {
       {/* Modal Content Panel */}
       <motion.div
         className="search-panel"
-        initial={{ opacity: 0, y: -25 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -15 }}
-        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Top Bar / Header */}
         <div className="search-panel-header">
-          <div className="search-brand-title">
-            <span>VENSEVEN</span>
-          </div>
+          <Link
+            to="/"
+            className="search-brand-logo"
+            onClick={onClose}
+            aria-label="VENSEVEN Home"
+          >
+            <img
+              src="/logo.png"
+              alt="VENSEVEN"
+              className="search-brand-icon"
+            />
+            <span className="search-brand-name">VENSEVEN</span>
+          </Link>
 
           <button
             type="button"
@@ -184,7 +268,13 @@ function SearchModalContent({ onClose }) {
         {/* Input Form Bar */}
         <form onSubmit={handleFormSubmit} className="search-input-form">
           <div className="search-input-wrapper">
-            <FiSearch className="search-input-icon" />
+            <button
+              type="submit"
+              className="search-input-icon-btn"
+              aria-label="Execute search"
+            >
+              <FiSearch className="search-input-icon" />
+            </button>
             <input
               ref={inputRef}
               type="search"
@@ -227,39 +317,33 @@ function SearchModalContent({ onClose }) {
           </div>
         </div>
 
-        {/* Scrollable Results & Empty State Area */}
+        {/* Scrollable Results & Suggestions Area */}
         <div className="search-content-body">
           {/* STATE 1: Empty Search Input (Default Initial State) */}
           {!trimmedQuery && (
             <div className="search-initial-state">
-              <div className="search-initial-hero">
-                <span className="search-section-label">CURATED COLLECTION</span>
-                <h3 className="search-initial-title">SEARCH THE COLLECTION</h3>
-                <p className="search-initial-subtitle">
-                  Discover shirts, trousers, essentials and more.
-                </p>
+              <div className="search-curated-header">
+                <span className="search-section-label">TRENDING RIGHT NOW</span>
+                <button
+                  type="button"
+                  className="search-link-btn"
+                  onClick={() => {
+                    onClose();
+                    navigate("/shop");
+                  }}
+                >
+                  Browse All Pieces <FiArrowRight />
+                </button>
               </div>
 
-              <div className="search-curated-section">
-                <div className="search-curated-header">
-                  <h4>TRENDING RIGHT NOW</h4>
-                  <button
-                    type="button"
-                    className="search-link-btn"
-                    onClick={() => {
-                      onClose();
-                      navigate("/shop");
-                    }}
-                  >
-                    Browse All Pieces <FiArrowRight />
-                  </button>
-                </div>
-
-                <div className="search-products-grid" onClick={onClose}>
-                  {suggestedProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+              <div className="search-compact-grid">
+                {suggestedProducts.map((product) => (
+                  <CompactProductItem
+                    key={product.id || product._id}
+                    product={product}
+                    onClick={onClose}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -269,7 +353,7 @@ function SearchModalContent({ onClose }) {
             <div className="search-results-section">
               <div className="search-results-header">
                 <span className="search-count-badge">
-                  RESULTS ({searchResults.length})
+                  MATCHING PIECES ({searchResults.length})
                 </span>
                 {searchResults.length > 6 && (
                   <button
@@ -282,9 +366,13 @@ function SearchModalContent({ onClose }) {
                 )}
               </div>
 
-              <div className="search-products-grid" onClick={onClose}>
+              <div className="search-compact-grid">
                 {searchResults.slice(0, 6).map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <CompactProductItem
+                    key={product.id || product._id}
+                    product={product}
+                    onClick={onClose}
+                  />
                 ))}
               </div>
 

@@ -33,16 +33,23 @@ function CloudinaryImage({
 }) {
   const [hasError, setHasError] = useState(false);
 
+  // If source is a known unhosted placeholder or errored, switch to fallbackSrc immediately
+  const isBrokenSource =
+    typeof src === "string" &&
+    (src.includes("venseven/products/") || src.includes("placeholder"));
+
+  const targetSrc = (isBrokenSource && fallbackSrc) || (hasError && fallbackSrc) ? fallbackSrc : src;
+
   // Compute final optimized URL using preset, custom transform, or dimensional fallback
   const resolvedSrc = optimizeCloudinaryUrl(
-    src,
+    targetSrc,
     preset || transform || {
       width: typeof width === "number" ? width : undefined,
       height: typeof height === "number" ? height : undefined,
     }
   );
 
-  const displaySrc = hasError && fallbackSrc ? fallbackSrc : resolvedSrc;
+  const displaySrc = (hasError && fallbackSrc) ? fallbackSrc : resolvedSrc;
 
   const handleError = (e) => {
     if (!hasError && fallbackSrc) {

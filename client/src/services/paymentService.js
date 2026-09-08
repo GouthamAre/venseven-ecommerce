@@ -43,13 +43,24 @@ export function loadRazorpaySDK() {
  * @returns {Promise<{ success: boolean, razorpayOrderId: string, amount: number, currency: string, keyId: string, orderNumber: string }>}
  */
 export async function createPaymentOrder(orderNumber) {
-  const response = await fetch(`${API_BASE_URL}/payments/create-order`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ orderNumber }),
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/payments/create-order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ orderNumber }),
+    });
+  } catch (netErr) {
+    console.error("[Payment Service Network Error]:", netErr);
+    const error = new Error(
+      "Payment backend is currently unreachable. Please verify your internet connection or try again."
+    );
+    error.status = 0;
+    error.data = { success: false, message: error.message };
+    throw error;
+  }
 
   const data = await response.json().catch(() => ({
     success: false,
@@ -73,13 +84,24 @@ export async function createPaymentOrder(orderNumber) {
  * @returns {Promise<{ success: boolean, message: string, order: object }>}
  */
 export async function verifyPayment(paymentData) {
-  const response = await fetch(`${API_BASE_URL}/payments/verify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(paymentData),
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/payments/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(paymentData),
+    });
+  } catch (netErr) {
+    console.error("[Payment Verification Network Error]:", netErr);
+    const error = new Error(
+      "Unable to reach payment verification server. Your payment may have been processed by your bank. Please do not re-pay; refresh the order status."
+    );
+    error.status = 0;
+    error.data = { success: false, message: error.message };
+    throw error;
+  }
 
   const data = await response.json().catch(() => ({
     success: false,

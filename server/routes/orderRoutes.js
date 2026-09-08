@@ -140,11 +140,27 @@ router.post("/", async (req, res) => {
         product = await Product.findById(item.productId);
       }
       if (!product && item.slug) {
-        product = await Product.findOne({ slug: item.slug });
-      }
-      if (!product) {
+        const cleanSlug = String(item.slug).trim().toLowerCase();
         product = await Product.findOne({
-          $or: [{ name: item.name }, { slug: String(item.productId) }],
+          $or: [{ slug: item.slug }, { slug: cleanSlug }],
+        });
+      }
+      if (!product && item.name) {
+        const escapedName = item.name
+          .trim()
+          .replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
+          .replace(/[\u2018\u2019']/g, "['’]");
+        product = await Product.findOne({
+          $or: [
+            { name: item.name },
+            { name: new RegExp(`^${escapedName}$`, "i") },
+            { slug: String(item.productId).trim().toLowerCase() },
+          ],
+        });
+      }
+      if (!product && item.productId) {
+        product = await Product.findOne({
+          slug: String(item.productId).trim().toLowerCase(),
         });
       }
 

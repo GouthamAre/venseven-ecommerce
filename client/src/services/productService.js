@@ -2,6 +2,44 @@ import { API_BASE_URL } from "./apiConfig";
 import localProducts from "../data/products";
 
 /**
+ * Helper to enrich API products with local high-resolution asset images
+ * if the remote URL is missing or points to unhosted Cloudinary demo placeholders.
+ */
+function enrichProductAssets(apiProduct) {
+  if (!apiProduct) return apiProduct;
+
+  const localMatch = localProducts.find(
+    (lp) =>
+      (apiProduct.slug && lp.slug.toLowerCase() === apiProduct.slug.toLowerCase()) ||
+      String(lp.id) === String(apiProduct.id || apiProduct._id) ||
+      (apiProduct.name && lp.name.toLowerCase() === apiProduct.name.toLowerCase())
+  );
+
+  if (!localMatch) return apiProduct;
+
+  const remotePrimary = apiProduct.primaryImage || apiProduct.image || "";
+  const isBrokenRemote =
+    !remotePrimary ||
+    (typeof remotePrimary === "string" &&
+      (remotePrimary.includes("venseven/products/") || remotePrimary.includes("placeholder")));
+
+  const resolvedImage = isBrokenRemote ? localMatch.image : remotePrimary;
+  const resolvedGallery =
+    Array.isArray(apiProduct.images) &&
+    apiProduct.images.length > 0 &&
+    !apiProduct.images[0]?.url?.includes("venseven/products/")
+      ? apiProduct.images.map((img) => (typeof img === "string" ? img : img.url))
+      : localMatch.gallery || [localMatch.image];
+
+  return {
+    ...apiProduct,
+    image: resolvedImage,
+    primaryImage: resolvedImage,
+    gallery: resolvedGallery,
+  };
+}
+
+/**
  * Fetch public products with optional filtering, search, pagination, and sorting
  *
  * @param {object} [params] - { category, subcategory, color, size, minPrice, maxPrice, search, filter, sort, page, limit }
@@ -24,7 +62,10 @@ export async function getProducts(params = {}) {
     if (response.ok) {
       const data = await response.json();
       if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-        return data;
+        return {
+          ...data,
+          products: data.products.map(enrichProductAssets),
+        };
       }
     }
   } catch (error) {
@@ -90,7 +131,10 @@ export async function getProductBySlug(slug) {
     if (response.ok) {
       const data = await response.json();
       if (data?.success && data.product) {
-        return data;
+        return {
+          ...data,
+          product: enrichProductAssets(data.product),
+        };
       }
     }
   } catch (error) {
@@ -139,7 +183,10 @@ export async function getRecommendations(slug) {
     if (response.ok) {
       const data = await response.json();
       if (data?.success && Array.isArray(data.recommendations)) {
-        return data;
+        return {
+          ...data,
+          recommendations: data.recommendations.map(enrichProductAssets),
+        };
       }
     }
   } catch (error) {

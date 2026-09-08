@@ -78,10 +78,23 @@ function ProductDetails({ product }) {
     return available ? available.size : sizeList[0]?.size || "";
   }, [sizeList]);
 
-  // Gallery active image (defaults to product image)
-  const [activeImage, setActiveImage] = useState(
-    product.image || product.primaryImage || product.gallery?.[0] || ""
+  const localMatch = products.find(
+    (lp) =>
+      lp.slug.toLowerCase() === (product.slug || "").toLowerCase() ||
+      String(lp.id) === String(product.id || product._id) ||
+      lp.name.toLowerCase() === (product.name || "").toLowerCase()
   );
+  const fallbackAsset = localMatch?.image || "";
+
+  const candidateActiveImage =
+    (product.image && !product.image.includes("venseven/products/"))
+      ? product.image
+      : (product.primaryImage && !product.primaryImage.includes("venseven/products/"))
+      ? product.primaryImage
+      : fallbackAsset || product.gallery?.[0] || "";
+
+  // Gallery active image (defaults to product image)
+  const [activeImage, setActiveImage] = useState(candidateActiveImage);
 
   // User selections
   const [selectedSize, setSelectedSize] = useState(firstAvailableSize);
@@ -187,12 +200,17 @@ function ProductDetails({ product }) {
               <div className="gallery-main-image-wrapper">
                 <motion.img
                   key={activeImage}
-                  src={activeImage || product.image}
+                  src={activeImage || fallbackAsset || product.image}
                   alt={product.name}
                   className="gallery-main-img"
                   initial={{ opacity: 0.7 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3 }}
+                  onError={(e) => {
+                    if (fallbackAsset && e.target.src !== fallbackAsset) {
+                      e.target.src = fallbackAsset;
+                    }
+                  }}
                 />
 
                 {/* Status Badges */}
@@ -336,8 +354,8 @@ function ProductDetails({ product }) {
               )}
 
               {/* Quantity & Actions */}
-              <div className="product-action-row">
-                <div className="quantity-stepper">
+              <div className="product-purchase-section product-action-row">
+                <div className="quantity-wrapper quantity-stepper">
                   <button
                     type="button"
                     className="qty-btn"

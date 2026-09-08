@@ -118,7 +118,13 @@ function Orders() {
       const keyId =
         paymentOrderData.keyId ||
         import.meta.env?.VITE_RAZORPAY_KEY_ID ||
-        "rzp_test_placeholder";
+        "";
+
+      if (!keyId || keyId === "rzp_test_placeholder") {
+        alert("Razorpay Key ID is not configured. Please ensure VITE_RAZORPAY_KEY_ID is set.");
+        setActivePayingOrder(null);
+        return;
+      }
 
       const razorpayOptions = {
         key: keyId,
@@ -167,7 +173,22 @@ function Orders() {
         },
       };
 
-      const rzpInstance = new window.Razorpay(razorpayOptions);
+      let rzpInstance;
+      try {
+        rzpInstance = new window.Razorpay(razorpayOptions);
+      } catch (sdkInitErr) {
+        console.error("Razorpay SDK initialization failed:", sdkInitErr);
+        alert("Failed to open Razorpay checkout popup. Please check your network or ad-blocker settings.");
+        setActivePayingOrder(null);
+        return;
+      }
+
+      rzpInstance.on("payment.failed", function (failResponse) {
+        console.error("Payment failed on order retry:", failResponse?.error);
+        alert(`Payment failed: ${failResponse?.error?.description || "Transaction declined"}`);
+        setActivePayingOrder(null);
+      });
+
       rzpInstance.open();
     } catch (err) {
       console.error("Pay order error:", err);

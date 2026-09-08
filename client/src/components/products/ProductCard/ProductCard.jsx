@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useWishlist } from "../../../context/useWishlist";
 import CloudinaryImage from "../../common/CloudinaryImage/CloudinaryImage";
+import localProducts from "../../../data/products";
 import "./ProductCard.css";
 
 function ProductCard({ product, onWishlist, onQuickView }) {
@@ -11,11 +12,24 @@ function ProductCard({ product, onWishlist, onQuickView }) {
   const pId = product.id || product._id;
   const productUrl = `/product/${product.slug || pId}`;
   const wishlisted = isWishlisted(pId);
-  const imageSrc =
+
+  const localMatch = localProducts.find(
+    (lp) =>
+      (product.slug && lp.slug.toLowerCase() === product.slug.toLowerCase()) ||
+      String(lp.id) === String(pId) ||
+      (product.name && lp.name.toLowerCase() === product.name.toLowerCase())
+  );
+  const fallbackSrc = localMatch?.image || "";
+  const rawImage =
     product.image ||
     product.primaryImage ||
     product.images?.[0]?.url ||
     "";
+  const isBrokenRemote =
+    typeof rawImage === "string" &&
+    (rawImage.includes("venseven/products/") || rawImage.includes("placeholder"));
+
+  const imageSrc = isBrokenRemote || !rawImage ? fallbackSrc : rawImage;
 
   const isSoldOut =
     product.totalStock !== undefined && product.totalStock <= 0;
@@ -41,6 +55,7 @@ function ProductCard({ product, onWishlist, onQuickView }) {
         <Link to={productUrl} aria-label={`View details of ${product.name}`}>
           <CloudinaryImage
             src={imageSrc}
+            fallbackSrc={fallbackSrc}
             alt={product.name}
             loading="lazy"
           />
