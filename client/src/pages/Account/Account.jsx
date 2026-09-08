@@ -5,6 +5,7 @@ import {
   FiLock,
   FiMail,
   FiUser,
+  FiPhone,
   FiEye,
   FiEyeOff,
   FiArrowRight,
@@ -15,9 +16,6 @@ import {
   FiStar,
   FiLogOut,
   FiShoppingBag,
-  FiEdit2,
-  FiChevronDown,
-  FiChevronUp,
 } from "react-icons/fi";
 
 import Navbar from "../../components/layout/Navbar/Navbar";
@@ -31,8 +29,6 @@ function Account({ initialView }) {
     isAuthenticated,
     login,
     register,
-    sendOtp,
-    verifyOtp,
     loginWithGoogle,
     logout,
     authError,
@@ -43,6 +39,19 @@ function Account({ initialView }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // Resolve initial tab ('login' | 'register') from URL
+  const resolveTab = useCallback(() => {
+    const tabParam = (
+      searchParams.get("tab") ||
+      searchParams.get("mode") ||
+      ""
+    ).toLowerCase();
+    if (tabParam === "register" || tabParam === "signup" || tabParam === "create") {
+      return "register";
+    }
+    return "login";
+  }, [searchParams]);
+
   // Resolve initial view from props, pathname, or query parameters
   const resolveView = useCallback(() => {
     if (initialView) return initialView;
@@ -52,33 +61,23 @@ function Account({ initialView }) {
       ""
     ).toLowerCase();
     if (tabParam === "forgot" || tabParam === "reset") return "forgot";
-    if (tabParam === "register" || tabParam === "signup") return "portal";
     if (location.pathname.includes("forgot")) return "forgot";
     return "portal";
   }, [initialView, searchParams, location.pathname]);
 
   const [view, setView] = useState(resolveView); // 'portal' | 'forgot'
-  const [showEmailAuth, setShowEmailAuth] = useState(false);
+  const [authTab, setAuthTab] = useState(resolveTab); // 'login' | 'register'
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Phone + OTP authentication state
-  const [phone, setPhone] = useState("");
-  const [otpStep, setOtpStep] = useState("phone"); // 'phone' | 'verify'
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
-  const [clientName, setClientName] = useState("");
-  const [resendCountdown, setResendCountdown] = useState(0);
-  const [devOtpHint, setDevOtpHint] = useState("");
-  const otpInputRefs = useRef([]);
+  const [gsiRendered, setGsiRendered] = useState(false);
   const googleBtnContainerRef = useRef(null);
   const gsiInitializedRef = useRef(false);
 
-  // Traditional Email/Password state (Preserved for existing accounts & Admin)
-  const [emailAuthMode, setEmailAuthMode] = useState("login"); // 'login' | 'register'
+  // Email / Password states
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
-    remember: false,
   });
   const [registerData, setRegisterData] = useState({
     name: "",
@@ -86,7 +85,6 @@ function Account({ initialView }) {
     password: "",
     confirmPassword: "",
     phone: "",
-    agreeTerms: true,
   });
   const [forgotEmail, setForgotEmail] = useState("");
 
@@ -94,24 +92,16 @@ function Account({ initialView }) {
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Synchronize view if URL or prop changes
+  // Synchronize view and tab if URL or prop changes
   useEffect(() => {
-    const target = resolveView();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setView(target);
+    const targetView = resolveView();
+    const targetTab = resolveTab();
+    setView(targetView);
+    setAuthTab(targetTab);
     setLocalError("");
     setFeedbackMsg("");
     clearError();
-  }, [resolveView, clearError]);
-
-  // Resend Countdown Timer
-  useEffect(() => {
-    if (resendCountdown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCountdown]);
+  }, [resolveView, resolveTab, clearError]);
 
   // Auto-redirect helper on successful authentication
   const handleAuthSuccess = useCallback(() => {
@@ -127,6 +117,15 @@ function Account({ initialView }) {
     setLocalError("");
     setFeedbackMsg("");
     clearError();
+  };
+
+  const handleTabChange = (newTab) => {
+    setAuthTab(newTab);
+    setLocalError("");
+    setFeedbackMsg("");
+    clearError();
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   };
 
   // Google Sign-In Credential Callback
@@ -159,6 +158,24 @@ function Account({ initialView }) {
 
     let checkInterval = null;
 
+    const renderGoogleBtn = () => {
+      if (window.google?.accounts?.id && googleBtnContainerRef.current) {
+        googleBtnContainerRef.current.innerHTML = "";
+        const isMobile = window.innerWidth <= 480;
+        const targetWidth = isMobile ? 300 : 360;
+        window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          width: targetWidth,
+          text: "continue_with",
+          shape: "rectangular",
+          logo_alignment: "left",
+        });
+        setGsiRendered(true);
+      }
+    };
+
     const initGsi = () => {
       if (window.google?.accounts?.id) {
         try {
@@ -172,16 +189,7 @@ function Account({ initialView }) {
             gsiInitializedRef.current = true;
           }
 
-          if (googleBtnContainerRef.current && !googleBtnContainerRef.current.hasChildNodes()) {
-            window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
-              theme: "outline",
-              size: "large",
-              width: 320,
-              text: "continue_with",
-              shape: "rectangular",
-              logo_alignment: "left",
-            });
-          }
+          renderGoogleBtn();
         } catch (initErr) {
           console.warn("[Google GSI Init Warning]:", initErr);
         }
@@ -199,8 +207,14 @@ function Account({ initialView }) {
       }, 250);
     }
 
+    const handleResize = () => {
+      renderGoogleBtn();
+    };
+    window.addEventListener("resize", handleResize);
+
     return () => {
       if (checkInterval) clearInterval(checkInterval);
+      window.removeEventListener("resize", handleResize);
     };
   }, [handleGoogleCredentialResponse, view]);
 
@@ -216,7 +230,7 @@ function Account({ initialView }) {
 
       if (!googleClientId) {
         setLocalError(
-          "Google Sign-In is not configured (VITE_GOOGLE_CLIENT_ID required). Please sign in using Phone OTP or Email & Password."
+          "Google Sign-In is not configured (VITE_GOOGLE_CLIENT_ID required). Please sign in using your email address and password."
         );
         return;
       }
@@ -241,7 +255,7 @@ function Account({ initialView }) {
       }
 
       setLocalError(
-        "Google Sign-In script is loading or unavailable. Please sign in with Phone OTP or Email & Password."
+        "Google Sign-In script is loading or unavailable. Please sign in with your email address and password."
       );
     } catch (err) {
       setIsSubmitting(false);
@@ -250,122 +264,25 @@ function Account({ initialView }) {
   };
 
   // -------------------------------------------------------------
-  // PHONE + OTP HANDLERS
-  // -------------------------------------------------------------
-  const handleSendOtp = async (e) => {
-    if (e) e.preventDefault();
-    setLocalError("");
-    setFeedbackMsg("");
-
-    const digitsOnly = phone.replace(/\D/g, "");
-    if (digitsOnly.length !== 10) {
-      setLocalError("Please enter a valid 10-digit mobile phone number.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    const result = await sendOtp(digitsOnly);
-    setIsSubmitting(false);
-
-    if (result.success) {
-      setOtpStep("verify");
-      setResendCountdown(45);
-      setFeedbackMsg(result.message || `Verification code sent to +91 ${digitsOnly}`);
-      if (result.devOtp) {
-        setDevOtpHint(result.devOtp);
-      }
-      setTimeout(() => {
-        otpInputRefs.current[0]?.focus();
-      }, 100);
-    } else {
-      setLocalError(result.error || "Failed to dispatch verification code.");
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    if (e) e.preventDefault();
-    setLocalError("");
-    setFeedbackMsg("");
-
-    const code = otpDigits.join("");
-    if (code.length !== 6) {
-      setLocalError("Please enter the complete 6-digit verification code.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    const result = await verifyOtp(phone, code, clientName.trim());
-    setIsSubmitting(false);
-
-    if (result.success) {
-      setFeedbackMsg("Verification successful! Welcome to VENSEVEN.");
-      handleAuthSuccess();
-    } else {
-      setLocalError(result.error || "Invalid verification code. Please check and try again.");
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (resendCountdown > 0) return;
-    setOtpDigits(["", "", "", "", "", ""]);
-    await handleSendOtp();
-  };
-
-  const handleOtpDigitChange = (index, value) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
-    const newDigits = [...otpDigits];
-    newDigits[index] = digit;
-    setOtpDigits(newDigits);
-
-    if (localError) setLocalError("");
-
-    // Auto-advance focus to next input
-    if (digit && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
-
-    const newDigits = [...otpDigits];
-    for (let i = 0; i < 6; i++) {
-      newDigits[i] = pasted[i] || "";
-    }
-    setOtpDigits(newDigits);
-
-    const nextIndex = Math.min(pasted.length, 5);
-    otpInputRefs.current[nextIndex]?.focus();
-  };
-
-  const handleFillDevOtp = () => {
-    if (!devOtpHint) return;
-    const digits = devOtpHint.split("").slice(0, 6);
-    setOtpDigits(digits);
-    if (localError) setLocalError("");
-  };
-
-  // -------------------------------------------------------------
-  // TRADITIONAL EMAIL / PASSWORD HANDLERS
+  // EMAIL / PASSWORD AUTHENTICATION HANDLERS
   // -------------------------------------------------------------
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLocalError("");
     setFeedbackMsg("");
+    clearError();
 
     const emailTrimmed = loginData.email.trim();
     const passwordTrimmed = loginData.password.trim();
 
     if (!emailTrimmed || !passwordTrimmed) {
-      setLocalError("Please enter both email and password.");
+      setLocalError("Please enter both email address and password.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      setLocalError("Please enter a valid email address.");
       return;
     }
 
@@ -374,9 +291,10 @@ function Account({ initialView }) {
     setIsSubmitting(false);
 
     if (result.success) {
+      setFeedbackMsg("Signed in successfully! Redirecting...");
       handleAuthSuccess();
     } else {
-      setLocalError(result.error || "Sign in failed. Please check your credentials.");
+      setLocalError(result.error || "Invalid email address or password.");
     }
   };
 
@@ -384,13 +302,27 @@ function Account({ initialView }) {
     e.preventDefault();
     setLocalError("");
     setFeedbackMsg("");
+    clearError();
 
     const nameTrimmed = registerData.name.trim();
     const emailTrimmed = registerData.email.trim();
     const passwordTrimmed = registerData.password.trim();
+    const confirmPasswordTrimmed = registerData.confirmPassword.trim();
+    const phoneTrimmed = registerData.phone.trim();
 
-    if (!nameTrimmed || !emailTrimmed || !passwordTrimmed) {
+    if (!nameTrimmed || !emailTrimmed || !passwordTrimmed || !confirmPasswordTrimmed) {
       setLocalError("Please fill in all required fields.");
+      return;
+    }
+
+    if (nameTrimmed.length < 2) {
+      setLocalError("Full name must be at least 2 characters.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailTrimmed)) {
+      setLocalError("Please provide a valid email address.");
       return;
     }
 
@@ -399,9 +331,17 @@ function Account({ initialView }) {
       return;
     }
 
-    if (passwordTrimmed !== registerData.confirmPassword.trim()) {
-      setLocalError("Passwords do not match.");
+    if (passwordTrimmed !== confirmPasswordTrimmed) {
+      setLocalError("Passwords do not match. Please verify.");
       return;
+    }
+
+    if (phoneTrimmed) {
+      const cleanPhone = phoneTrimmed.replace(/\D/g, "");
+      if (cleanPhone.length !== 10) {
+        setLocalError("Please enter a valid 10-digit mobile number, or leave blank.");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -409,12 +349,12 @@ function Account({ initialView }) {
       nameTrimmed,
       emailTrimmed,
       passwordTrimmed,
-      registerData.phone.trim()
+      phoneTrimmed
     );
     setIsSubmitting(false);
 
     if (result.success) {
-      setFeedbackMsg(`Account created successfully for ${result.user.name}!`);
+      setFeedbackMsg(`Welcome to VENSEVEN, ${result.user?.name || nameTrimmed}! Account created.`);
       handleAuthSuccess();
     } else {
       setLocalError(result.error || "Registration failed. Please try again.");
@@ -664,89 +604,291 @@ function Account({ initialView }) {
                   </AnimatePresence>
 
                   {/* ====================================================
-                      VIEW: FAST PORTAL AUTH (GOOGLE + PHONE OTP)
+                      VIEW: PORTAL AUTH (GOOGLE + EMAIL SIGN IN / REGISTER)
                   ==================================================== */}
                   {view === "portal" && (
-                    <div className="fast-auth-flow">
+                    <div className="auth-portal-flow">
                       {/* 1. ONE-TAP GOOGLE AUTH BUTTON & OFFICIAL GSI SLOT */}
                       <div className="google-auth-wrapper">
-                        <button
-                          type="button"
-                          className="auth-google-btn"
-                          onClick={handleGoogleAuth}
-                          disabled={isSubmitting}
-                          aria-label="Continue with Google"
-                        >
-                          <svg className="google-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                            <path
-                              fill="#4285F4"
-                              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                            />
-                            <path
-                              fill="#34A853"
-                              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                            />
-                            <path
-                              fill="#FBBC05"
-                              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                            />
-                            <path
-                              fill="#EA4335"
-                              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                            />
-                          </svg>
-                          <span>Continue with Google</span>
-                        </button>
-                        <div ref={googleBtnContainerRef} className="google-rendered-button-slot" aria-hidden="true" />
+                        <div
+                          ref={googleBtnContainerRef}
+                          className="google-rendered-button-slot"
+                        />
+                        {!gsiRendered && (
+                          <button
+                            type="button"
+                            className="auth-google-btn"
+                            onClick={handleGoogleAuth}
+                            disabled={isSubmitting}
+                            aria-label="Continue with Google"
+                          >
+                            <svg className="google-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                              <path
+                                fill="#4285F4"
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                              />
+                              <path
+                                fill="#34A853"
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                              />
+                              <path
+                                fill="#FBBC05"
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                              />
+                              <path
+                                fill="#EA4335"
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                              />
+                            </svg>
+                            <span>Continue with Google</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* 2. SECTION DIVIDER */}
                       <div className="auth-divider">
-                        <span>OR SIGN IN WITH PHONE &amp; OTP</span>
+                        <span>OR CONTINUE WITH EMAIL</span>
                       </div>
 
-                      {/* 3. PHONE & OTP FORM */}
-                      {otpStep === "phone" ? (
-                        <form onSubmit={handleSendOtp} className="auth-form">
+                      {/* 3. TABS: SIGN IN | CREATE ACCOUNT */}
+                      <div className="account-tab-bar" role="tablist" aria-label="Authentication mode">
+                        <button
+                          type="button"
+                          id="tab-sign-in"
+                          role="tab"
+                          aria-selected={authTab === "login"}
+                          className={`account-tab-btn ${authTab === "login" ? "active" : ""}`}
+                          onClick={() => handleTabChange("login")}
+                        >
+                          SIGN IN
+                        </button>
+                        <button
+                          type="button"
+                          id="tab-create-account"
+                          role="tab"
+                          aria-selected={authTab === "register"}
+                          className={`account-tab-btn ${authTab === "register" ? "active" : ""}`}
+                          onClick={() => handleTabChange("register")}
+                        >
+                          CREATE ACCOUNT
+                        </button>
+                      </div>
+
+                      {/* 4. PRIMARY TABBED FORMS */}
+                      {authTab === "login" ? (
+                        <form onSubmit={handleLoginSubmit} className="auth-form" noValidate>
                           <div className="auth-field-group">
-                            <label htmlFor="phone-number">
-                              Mobile Number <span className="req">*</span>
+                            <label htmlFor="login-email">
+                              Email Address <span className="req">*</span>
                             </label>
-                            <div className="phone-input-wrapper">
-                              <div className="phone-prefix-badge">
-                                <span className="country-flag-icon">🇮🇳</span>
-                                <span>+91</span>
-                              </div>
+                            <div className="input-icon-wrapper">
+                              <FiMail className="field-icon" />
                               <input
-                                type="tel"
-                                id="phone-number"
-                                className="phone-input-field"
-                                value={phone}
+                                type="email"
+                                id="login-email"
+                                value={loginData.email}
                                 onChange={(e) => {
-                                  const raw = e.target.value.replace(/\D/g, "").slice(0, 10);
-                                  setPhone(raw);
+                                  setLoginData({ ...loginData, email: e.target.value });
                                   if (localError) setLocalError("");
                                   clearError();
                                 }}
-                                placeholder="Enter 10-digit mobile number"
-                                autoFocus
+                                placeholder="client@example.com"
+                                autoComplete="email"
                                 required
                               />
                             </div>
                           </div>
 
                           <div className="auth-field-group">
-                            <label htmlFor="client-name">
-                              Your Name <span style={{ color: "#888888", textTransform: "none", fontWeight: 400 }}>(Optional for new clients)</span>
+                            <div className="label-row">
+                              <label htmlFor="login-pwd">
+                                Password <span className="req">*</span>
+                              </label>
+                              <button
+                                type="button"
+                                className="forgot-password-link"
+                                onClick={() => handleSwitchView("forgot")}
+                              >
+                                Forgot password?
+                              </button>
+                            </div>
+                            <div className="input-icon-wrapper">
+                              <FiLock className="field-icon" />
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                id="login-pwd"
+                                value={loginData.password}
+                                onChange={(e) => {
+                                  setLoginData({ ...loginData, password: e.target.value });
+                                  if (localError) setLocalError("");
+                                  clearError();
+                                }}
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                required
+                              />
+                              <button
+                                type="button"
+                                className="pwd-toggle-btn"
+                                onClick={() => setShowPassword(!showPassword)}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                              >
+                                {showPassword ? <FiEyeOff /> : <FiEye />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="auth-submit-btn"
+                            disabled={isSubmitting}
+                          >
+                            <span>{isSubmitting ? "SIGNING IN..." : "SIGN IN"}</span>
+                            <FiArrowRight />
+                          </button>
+
+                          <div className="auth-card-footer">
+                            <span>New to VENSEVEN?</span>
+                            <button
+                              type="button"
+                              className="switch-view-btn"
+                              onClick={() => handleTabChange("register")}
+                            >
+                              Create an Account
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <form onSubmit={handleRegisterSubmit} className="auth-form" noValidate>
+                          <div className="auth-field-group">
+                            <label htmlFor="reg-name">
+                              Full Name <span className="req">*</span>
                             </label>
                             <div className="input-icon-wrapper">
                               <FiUser className="field-icon" />
                               <input
                                 type="text"
-                                id="client-name"
-                                value={clientName}
-                                onChange={(e) => setClientName(e.target.value)}
+                                id="reg-name"
+                                value={registerData.name}
+                                onChange={(e) => {
+                                  setRegisterData({ ...registerData, name: e.target.value });
+                                  if (localError) setLocalError("");
+                                  clearError();
+                                }}
                                 placeholder="e.g. Aryan Sharma"
+                                autoComplete="name"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="auth-field-group">
+                            <label htmlFor="reg-email">
+                              Email Address <span className="req">*</span>
+                            </label>
+                            <div className="input-icon-wrapper">
+                              <FiMail className="field-icon" />
+                              <input
+                                type="email"
+                                id="reg-email"
+                                value={registerData.email}
+                                onChange={(e) => {
+                                  setRegisterData({ ...registerData, email: e.target.value });
+                                  if (localError) setLocalError("");
+                                  clearError();
+                                }}
+                                placeholder="e.g. aryan@example.com"
+                                autoComplete="email"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="auth-fields-row">
+                            <div className="auth-field-group">
+                              <label htmlFor="reg-pwd">
+                                Password <span className="req">*</span>
+                              </label>
+                              <div className="input-icon-wrapper">
+                                <FiLock className="field-icon" />
+                                <input
+                                  type={showPassword ? "text" : "password"}
+                                  id="reg-pwd"
+                                  value={registerData.password}
+                                  onChange={(e) => {
+                                    setRegisterData({
+                                      ...registerData,
+                                      password: e.target.value,
+                                    });
+                                    if (localError) setLocalError("");
+                                    clearError();
+                                  }}
+                                  placeholder="Min 6 chars"
+                                  autoComplete="new-password"
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  className="pwd-toggle-btn"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="auth-field-group">
+                              <label htmlFor="reg-cpwd">
+                                Confirm <span className="req">*</span>
+                              </label>
+                              <div className="input-icon-wrapper">
+                                <FiLock className="field-icon" />
+                                <input
+                                  type={showConfirmPassword ? "text" : "password"}
+                                  id="reg-cpwd"
+                                  value={registerData.confirmPassword}
+                                  onChange={(e) => {
+                                    setRegisterData({
+                                      ...registerData,
+                                      confirmPassword: e.target.value,
+                                    });
+                                    if (localError) setLocalError("");
+                                    clearError();
+                                  }}
+                                  placeholder="Re-enter password"
+                                  autoComplete="new-password"
+                                  required
+                                />
+                                <button
+                                  type="button"
+                                  className="pwd-toggle-btn"
+                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                >
+                                  {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="auth-field-group">
+                            <label htmlFor="reg-phone">
+                              Phone Number <span style={{ color: "#888888", textTransform: "none", fontWeight: 400 }}>(Optional for delivery notifications)</span>
+                            </label>
+                            <div className="input-icon-wrapper">
+                              <FiPhone className="field-icon" />
+                              <input
+                                type="tel"
+                                id="reg-phone"
+                                value={registerData.phone}
+                                onChange={(e) => {
+                                  setRegisterData({ ...registerData, phone: e.target.value });
+                                  if (localError) setLocalError("");
+                                  clearError();
+                                }}
+                                placeholder="e.g. 9876543210"
+                                autoComplete="tel"
                               />
                             </div>
                           </div>
@@ -754,304 +896,24 @@ function Account({ initialView }) {
                           <button
                             type="submit"
                             className="auth-submit-btn"
-                            disabled={isSubmitting || phone.replace(/\D/g, "").length !== 10}
+                            disabled={isSubmitting}
                           >
-                            <span>{isSubmitting ? "SENDING CODE..." : "GET VERIFICATION CODE"}</span>
+                            <span>{isSubmitting ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}</span>
                             <FiArrowRight />
                           </button>
-                        </form>
-                      ) : (
-                        <form onSubmit={handleVerifyOtp} className="auth-form">
-                          {/* OTP Number Header Pill */}
-                          <div className="otp-header-strip">
-                            <div className="otp-target-text">
-                              <span className="otp-target-label">CODE SENT TO</span>
-                              <span className="otp-target-number">+91 {phone}</span>
-                            </div>
+
+                          <div className="auth-card-footer">
+                            <span>Already have an account?</span>
                             <button
                               type="button"
-                              className="otp-change-number-btn"
-                              onClick={() => {
-                                setOtpStep("phone");
-                                setOtpDigits(["", "", "", "", "", ""]);
-                                setLocalError("");
-                              }}
+                              className="switch-view-btn"
+                              onClick={() => handleTabChange("login")}
                             >
-                              <FiEdit2 />
-                              <span>Change</span>
+                              Sign In
                             </button>
                           </div>
-
-                          <div className="auth-field-group">
-                            <label>Enter 6-Digit Verification Code</label>
-                            <div className="otp-container">
-                              {otpDigits.map((digit, idx) => (
-                                <input
-                                  key={idx}
-                                  ref={(el) => (otpInputRefs.current[idx] = el)}
-                                  type="text"
-                                  inputMode="numeric"
-                                  maxLength={1}
-                                  value={digit}
-                                  onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
-                                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                                  onPaste={handleOtpPaste}
-                                  className={`otp-digit-input ${digit ? "filled" : ""}`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Timer & Dev Hint */}
-                          <div className="otp-meta-row">
-                            <div className="otp-timer-box">
-                              {resendCountdown > 0 ? (
-                                <span>Resend OTP in <strong>{resendCountdown}s</strong></span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="otp-resend-link"
-                                  onClick={handleResendOtp}
-                                >
-                                  Resend Code
-                                </button>
-                              )}
-                            </div>
-
-                            {devOtpHint && (
-                              <button
-                                type="button"
-                                className="dev-otp-badge"
-                                onClick={handleFillDevOtp}
-                                title="Click to auto-paste generated demo OTP"
-                              >
-                                <span>Demo OTP: <strong>{devOtpHint}</strong> (Click to fill)</span>
-                              </button>
-                            )}
-                          </div>
-
-                          <button
-                            type="submit"
-                            className="auth-submit-btn"
-                            disabled={isSubmitting || otpDigits.join("").length !== 6}
-                          >
-                            <span>{isSubmitting ? "VERIFYING..." : "ENTER CLIENT PORTAL"}</span>
-                            <FiArrowRight />
-                          </button>
                         </form>
                       )}
-
-                      {/* 4. PREFER EMAIL & PASSWORD COLLAPSIBLE (For Admin & Existing Accounts) */}
-                      <div className="auth-legacy-toggle">
-                        <button
-                          type="button"
-                          className="legacy-toggle-btn"
-                          onClick={() => setShowEmailAuth(!showEmailAuth)}
-                        >
-                          <span>
-                            {showEmailAuth
-                              ? "Hide standard Email & Password sign-in"
-                              : "Prefer sign-in with Email & Password? Click here"}
-                          </span>
-                          {showEmailAuth ? (
-                            <FiChevronUp className="legacy-toggle-chevron rotated" />
-                          ) : (
-                            <FiChevronDown className="legacy-toggle-chevron" />
-                          )}
-                        </button>
-
-                        <AnimatePresence>
-                          {showEmailAuth && (
-                            <motion.div
-                              className="legacy-email-section"
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                            >
-                              <div className="account-tab-bar" style={{ marginBottom: "20px" }}>
-                                <button
-                                  type="button"
-                                  className={`account-tab-btn ${emailAuthMode === "login" ? "active" : ""}`}
-                                  onClick={() => setEmailAuthMode("login")}
-                                >
-                                  EMAIL SIGN IN
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`account-tab-btn ${emailAuthMode === "register" ? "active" : ""}`}
-                                  onClick={() => setEmailAuthMode("register")}
-                                >
-                                  EMAIL REGISTER
-                                </button>
-                              </div>
-
-                              {emailAuthMode === "login" ? (
-                                <form onSubmit={handleLoginSubmit} className="auth-form">
-                                  <div className="auth-field-group">
-                                    <label htmlFor="legacy-login-email">Email Address</label>
-                                    <div className="input-icon-wrapper">
-                                      <FiMail className="field-icon" />
-                                      <input
-                                        type="email"
-                                        id="legacy-login-email"
-                                        value={loginData.email}
-                                        onChange={(e) =>
-                                          setLoginData({ ...loginData, email: e.target.value })
-                                        }
-                                        placeholder="name@example.com"
-                                        required
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="auth-field-group">
-                                    <div className="label-row">
-                                      <label htmlFor="legacy-login-pwd">Password</label>
-                                      <button
-                                        type="button"
-                                        className="forgot-password-link"
-                                        onClick={() => handleSwitchView("forgot")}
-                                      >
-                                        Forgot password?
-                                      </button>
-                                    </div>
-                                    <div className="input-icon-wrapper">
-                                      <FiLock className="field-icon" />
-                                      <input
-                                        type={showPassword ? "text" : "password"}
-                                        id="legacy-login-pwd"
-                                        value={loginData.password}
-                                        onChange={(e) =>
-                                          setLoginData({ ...loginData, password: e.target.value })
-                                        }
-                                        placeholder="••••••••"
-                                        required
-                                      />
-                                      <button
-                                        type="button"
-                                        className="pwd-toggle-btn"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                      >
-                                        {showPassword ? <FiEyeOff /> : <FiEye />}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <button
-                                    type="submit"
-                                    className="auth-submit-btn"
-                                    disabled={isSubmitting}
-                                  >
-                                    <span>{isSubmitting ? "SIGNING IN..." : "SIGN IN WITH EMAIL"}</span>
-                                    <FiArrowRight />
-                                  </button>
-                                </form>
-                              ) : (
-                                <form onSubmit={handleRegisterSubmit} className="auth-form">
-                                  <div className="auth-field-group">
-                                    <label htmlFor="legacy-reg-name">Full Name</label>
-                                    <div className="input-icon-wrapper">
-                                      <FiUser className="field-icon" />
-                                      <input
-                                        type="text"
-                                        id="legacy-reg-name"
-                                        value={registerData.name}
-                                        onChange={(e) =>
-                                          setRegisterData({ ...registerData, name: e.target.value })
-                                        }
-                                        placeholder="Aryan Sharma"
-                                        required
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="auth-field-group">
-                                    <label htmlFor="legacy-reg-email">Email Address</label>
-                                    <div className="input-icon-wrapper">
-                                      <FiMail className="field-icon" />
-                                      <input
-                                        type="email"
-                                        id="legacy-reg-email"
-                                        value={registerData.email}
-                                        onChange={(e) =>
-                                          setRegisterData({ ...registerData, email: e.target.value })
-                                        }
-                                        placeholder="aryan@example.com"
-                                        required
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="auth-field-group">
-                                    <label htmlFor="legacy-reg-pwd">Password</label>
-                                    <div className="input-icon-wrapper">
-                                      <FiLock className="field-icon" />
-                                      <input
-                                        type={showPassword ? "text" : "password"}
-                                        id="legacy-reg-pwd"
-                                        value={registerData.password}
-                                        onChange={(e) =>
-                                          setRegisterData({
-                                            ...registerData,
-                                            password: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Min. 6 characters"
-                                        required
-                                      />
-                                      <button
-                                        type="button"
-                                        className="pwd-toggle-btn"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        aria-label={showPassword ? "Hide password" : "Show password"}
-                                      >
-                                        {showPassword ? <FiEyeOff /> : <FiEye />}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <div className="auth-field-group">
-                                    <label htmlFor="legacy-reg-cpwd">Confirm Password</label>
-                                    <div className="input-icon-wrapper">
-                                      <FiLock className="field-icon" />
-                                      <input
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        id="legacy-reg-cpwd"
-                                        value={registerData.confirmPassword}
-                                        onChange={(e) =>
-                                          setRegisterData({
-                                            ...registerData,
-                                            confirmPassword: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Re-enter password"
-                                        required
-                                      />
-                                      <button
-                                        type="button"
-                                        className="pwd-toggle-btn"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                                      >
-                                        {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <button
-                                    type="submit"
-                                    className="auth-submit-btn"
-                                    disabled={isSubmitting}
-                                  >
-                                    <span>{isSubmitting ? "CREATING..." : "CREATE ACCOUNT WITH EMAIL"}</span>
-                                    <FiArrowRight />
-                                  </button>
-                                </form>
-                              )}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
                     </div>
                   )}
 
@@ -1131,9 +993,9 @@ function Account({ initialView }) {
                           <FiPackage />
                         </div>
                         <div>
-                          <strong>Frictionless 1-Tap Access</strong>
+                          <strong>Seamless Access</strong>
                           <p>
-                            No passwords to remember. Instant access via Google or Phone OTP.
+                            Quick sign-in with Google or your email account.
                           </p>
                         </div>
                       </div>
