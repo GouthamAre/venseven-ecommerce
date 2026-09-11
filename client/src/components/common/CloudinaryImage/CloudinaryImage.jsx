@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { optimizeCloudinaryUrl } from "../../../utils/cloudinary";
+import { products as localProducts } from "../../../data/products";
 import "./CloudinaryImage.css";
 
 /**
@@ -33,12 +34,36 @@ function CloudinaryImage({
 }) {
   const [hasError, setHasError] = useState(false);
 
-  // If source is a known unhosted placeholder or errored, switch to fallbackSrc immediately
-  const isBrokenSource =
-    typeof src === "string" &&
-    (src.includes("venseven/products/") || src.includes("placeholder"));
+  // Auto-resolve local product fallback from product catalog if not explicitly provided
+  const autoFallback = (() => {
+    if (fallbackSrc) return fallbackSrc;
+    if (!alt && !src) return "";
+    const cleanAlt = String(alt || "").toLowerCase().replace(/['’]/g, "").trim();
+    const cleanSrc = String(src || "").toLowerCase();
+    const match = localProducts.find((lp) => {
+      const lpName = lp.name.toLowerCase().replace(/['’]/g, "").trim();
+      const lpSlug = (lp.slug || "").toLowerCase();
+      return (
+        (cleanAlt && (lpName === cleanAlt || cleanAlt.includes(lpName) || lpName.includes(cleanAlt))) ||
+        (lpSlug && (cleanSrc.includes(lpSlug) || cleanAlt.includes(lpSlug)))
+      );
+    });
+    return match?.image || "";
+  })();
 
-  const targetSrc = (isBrokenSource && fallbackSrc) || (hasError && fallbackSrc) ? fallbackSrc : src;
+  const effectiveFallback = fallbackSrc || autoFallback;
+
+  const lowerSrc = typeof src === "string" ? src.toLowerCase() : "";
+  const isBrokenSource =
+    !src ||
+    typeof src !== "string" ||
+    lowerSrc.includes("venseven/products/") ||
+    lowerSrc.includes("placeholder") ||
+    lowerSrc.includes("cmb6xxhf");
+
+  const targetSrc = (isBrokenSource && effectiveFallback) || (hasError && effectiveFallback)
+    ? effectiveFallback
+    : (src || effectiveFallback);
 
   // Compute final optimized URL using preset, custom transform, or dimensional fallback
   const resolvedSrc = optimizeCloudinaryUrl(
@@ -49,10 +74,10 @@ function CloudinaryImage({
     }
   );
 
-  const displaySrc = (hasError && fallbackSrc) ? fallbackSrc : resolvedSrc;
+  const displaySrc = (hasError && effectiveFallback) ? effectiveFallback : resolvedSrc;
 
   const handleError = (e) => {
-    if (!hasError && fallbackSrc) {
+    if (!hasError && effectiveFallback) {
       setHasError(true);
     }
     if (onError) {
@@ -79,7 +104,7 @@ function CloudinaryImage({
       loading={loading}
       width={width}
       height={height}
-      onError={handleError}
+      onError={displaySrc !== effectiveFallback ? handleError : undefined}
       {...rest}
     />
   );

@@ -1,8 +1,42 @@
 import { useState, useEffect, useCallback } from "react";
 import { CartContext } from "./cart-context";
+import { products as localProducts } from "../data/products";
 
 const CART_STORAGE_KEY = "venseven_cart";
 const COUPON_STORAGE_KEY = "venseven_applied_coupon";
+
+/**
+ * Helper to resolve guaranteed valid image for cart items
+ */
+function resolveCartItemImage(item) {
+  if (!item) return "";
+  const localMatch = localProducts.find((lp) => {
+    const lpName = lp.name.toLowerCase().replace(/['’]/g, "").trim();
+    const itemName = (item.name || "").toLowerCase().replace(/['’]/g, "").trim();
+    const itemSlug = (item.slug || "").toLowerCase().replace(/['’]/g, "").trim();
+    const lpSlug = (lp.slug || "").toLowerCase().replace(/['’]/g, "").trim();
+    return (
+      (itemSlug && (lpSlug === itemSlug || itemSlug.includes(lpSlug) || lpSlug.includes(itemSlug))) ||
+      String(lp.id) === String(item.productId || item.id || item._id) ||
+      (itemName && (lpName === itemName || itemName.includes(lpName) || lpName.includes(itemName)))
+    );
+  });
+
+  const raw = item.image || item.primaryImage || item.images?.[0]?.url || "";
+  const lowerRaw = typeof raw === "string" ? raw.toLowerCase() : "";
+  const isBroken =
+    !raw ||
+    typeof raw !== "string" ||
+    lowerRaw.includes("venseven/products/") ||
+    lowerRaw.includes("placeholder") ||
+    lowerRaw.includes("cmb6xxhf");
+
+  if (localMatch?.image && (isBroken || !raw.startsWith("http"))) {
+    return localMatch.image;
+  }
+
+  return isBroken ? (localMatch?.image || "") : raw;
+}
 
 /**
  * Helper to determine available stock for a specific product size
@@ -51,7 +85,13 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState(() => {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((item) => ({
+        ...item,
+        image: resolveCartItemImage(item),
+      }));
     } catch {
       return [];
     }
@@ -158,10 +198,7 @@ export function CartProvider({ children }) {
           color: product.color,
           price: pPrice,
           numericPrice: numPrice,
-          image:
-            product.image ||
-            product.primaryImage ||
-            (product.images?.[0]?.url || ""),
+          image: resolveCartItemImage(product),
           size,
           quantity: initialQty,
           maxStock: availableStock,
